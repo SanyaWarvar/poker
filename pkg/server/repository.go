@@ -1,0 +1,31 @@
+package server
+
+import (
+	"github.com/SanyaWarvar/poker/pkg/auth"
+	emailsmtp "github.com/SanyaWarvar/poker/pkg/email_smtp"
+	"github.com/SanyaWarvar/poker/pkg/user"
+	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
+)
+
+type Repository struct {
+	JwtRepo            auth.IJwtManagerRepo
+	UserRepo           user.IUserRepo
+	EmailSmtpRepo      emailsmtp.IEmailSmtpRepo
+	EmailSmtpCacheRepo emailsmtp.IEmailCacheRepo
+}
+
+func NewRepository(
+	db *sqlx.DB,
+	cacheDb *redis.Client,
+	emailCfg *emailsmtp.EmailCfg,
+	jwtCfg *auth.JwtManagerCfg,
+) *Repository {
+
+	return &Repository{
+		JwtRepo:            auth.NewJwtManagerPostgres(db, jwtCfg),
+		UserRepo:           user.NewUserPostgres(db),
+		EmailSmtpRepo:      emailsmtp.NewEmailSmtpPostgres(db, emailCfg),
+		EmailSmtpCacheRepo: emailsmtp.NewEmailCacheRepo(cacheDb, emailCfg.CodeExp),
+	}
+}
