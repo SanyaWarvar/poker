@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN balance int DEFAULT '1000' NOT NULL;

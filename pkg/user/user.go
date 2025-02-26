@@ -16,7 +16,8 @@ type User struct {
 	Email         string `json:"email" binding:"required" db:"email"`
 	Password      string `json:"password" binding:"required" db:"password_hash"`
 	ProfilePic    string `db:"profile_picture"`
-	ProfilePicUrl string
+	ProfilePicUrl string `json:"profile_picture_url"`
+	Balance       int    `json:"balance" db:"balance"`
 }
 
 const (
