@@ -1,7 +1,10 @@
 package server
 
 import (
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/sirupsen/logrus"
 )
@@ -22,6 +25,20 @@ func (s *Server) CreateApp() *fiber.App {
 		TimeZone:   "Asia/Krasnoyarsk",
 	}))
 
+	app.Use(cors.New(cors.Config{
+		AllowOriginsFunc: func(origin string) bool {
+			return true
+		},
+		AllowMethods:     "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
+		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
+		AllowCredentials: true,
+	}))
+
+	app.Head("check_health", func(c *fiber.Ctx) error {
+		c.Status(http.StatusOK)
+		return c.JSON(map[string]string{"details": "ok"})
+	})
+
 	auth := app.Group("/auth")
 	{
 		auth.Post("/sign_up", s.SignUp)
@@ -36,6 +53,5 @@ func (s *Server) CreateApp() *fiber.App {
 
 func (s *Server) Run(port string) {
 	app := s.CreateApp()
-
 	logrus.Fatal(app.Listen(":" + port))
 }
