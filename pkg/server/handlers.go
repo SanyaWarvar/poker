@@ -163,7 +163,7 @@ func (s *Server) SendCode(c *fiber.Ctx) error {
 	}
 
 	if err := s.services.EmailSmtpService.SendConfirmEmailMessage(input.Email); err != nil {
-		return ErrorResponse(c, http.StatusInternalServerError, "Failed to send confirmation code")
+		return ErrorResponse(c, http.StatusBadRequest, err.Error())
 	}
 	c.Status(http.StatusCreated)
 	return c.JSON(map[string]interface{}{

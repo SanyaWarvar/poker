@@ -2,6 +2,8 @@ package emailsmtp
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -32,11 +34,26 @@ func (s *EmailSmtpService) SendMessage(email, messageText, title string) error {
 }
 
 func (s *EmailSmtpService) SendConfirmEmailMessage(email string) error {
+	minTtl, _ := time.ParseDuration(os.Getenv("MIN_TTL"))
+	maxTtl, _ := time.ParseDuration(os.Getenv("CODE_EXP"))
+
+	_, ttl, err := s.cache.GetConfirmCode(email)
+
+	if err == nil && minTtl < ttl {
+		return errors.New(fmt.Sprintf("Сode has already been sent %s ago", maxTtl-ttl))
+	}
+
 	code := s.GenerateConfirmCode()
 	s.cache.SaveConfirmCode(email, code)
-	err := s.repo.SendConfirmEmailMessage(email, code)
-	if err != nil {
-		logrus.Errorf("error while sending confirm email message: %s", err.Error())
+	go func() {
+		err = s.repo.SendConfirmEmailMessage(email, code)
+		if err != nil {
+			logrus.Errorf("error while sending confirm email message: %s", err.Error())
+		}
+	}()
+
+	if err != nil && err.Error() == "redis: nil" {
+		return nil
 	}
 
 	return err
