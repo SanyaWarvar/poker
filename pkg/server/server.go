@@ -1,7 +1,10 @@
 package server
 
 import (
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/sirupsen/logrus"
 )
@@ -21,6 +24,18 @@ func (s *Server) CreateApp() *fiber.App {
 		TimeFormat: "15:04:05 02-Jan-2006",
 		TimeZone:   "Asia/Krasnoyarsk",
 	}))
+
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "*",
+		AllowMethods:     "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
+		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
+		AllowCredentials: true,
+	}))
+
+	app.Head("check_health", func(c *fiber.Ctx) error {
+		c.Status(http.StatusOK)
+		return c.JSON(map[string]string{"details": "ok"})
+	})
 
 	auth := app.Group("/auth")
 	{
