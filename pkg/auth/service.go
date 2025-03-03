@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -12,6 +14,7 @@ type IJwtManagerService interface {
 	GetRefreshTokenById(tokenId uuid.UUID) (string, error)
 	ParseToken(accessToken string) (*AccessTokenClaims, error)
 	CheckRefreshTokenExp(tokenId uuid.UUID) bool
+	GetTokensTtl() (time.Duration, time.Duration)
 }
 
 type JwtManagerService struct {
@@ -59,4 +62,8 @@ func (s *JwtManagerService) DeleteRefreshTokenById(tokenId uuid.UUID) error {
 
 func (s *JwtManagerService) CheckRefreshTokenExp(tokenId uuid.UUID) bool {
 	return s.repo.CheckRefreshTokenExp(tokenId)
+}
+
+func (s *JwtManagerService) GetTokensTtl() (time.Duration, time.Duration) {
+	return s.repo.GetTokensTtl()
 }

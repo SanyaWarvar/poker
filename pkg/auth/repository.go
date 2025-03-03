@@ -31,6 +31,7 @@ type IJwtManagerRepo interface {
 	GetRefreshTokenById(tokenId uuid.UUID) (string, error)
 	ParseToken(accessToken string) (*AccessTokenClaims, error)
 	CheckRefreshTokenExp(tokenId uuid.UUID) bool
+	GetTokensTtl() (time.Duration, time.Duration)
 }
 
 type JwtManagerPostgres struct {
@@ -145,4 +146,9 @@ func (m *JwtManagerPostgres) CheckRefreshTokenExp(tokenId uuid.UUID) bool {
 	}
 
 	return expDate.After(time.Now())
+}
+
+func (m *JwtManagerPostgres) GetTokensTtl() (time.Duration, time.Duration) {
+	accessTokenTtl, refreshTokenTtl := m.config.AccessTokenTTL, m.config.RefreshTokenTTL
+	return accessTokenTtl, refreshTokenTtl
 }

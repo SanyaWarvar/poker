@@ -11,13 +11,14 @@ import (
 )
 
 type User struct {
-	Id            uuid.UUID
-	Username      string `json:"username" binding:"required" db:"username"`
-	Email         string `json:"email" binding:"required" db:"email"`
-	Password      string `json:"password" binding:"required" db:"password_hash"`
-	ProfilePic    string `db:"profile_picture"`
-	ProfilePicUrl string `json:"profile_picture_url"`
-	Balance       int    `json:"balance" db:"balance"`
+	Id               uuid.UUID
+	Username         string `json:"username" binding:"required" db:"username"`
+	Email            string `json:"email" binding:"required" db:"email"`
+	Password         string `json:"password" binding:"required" db:"password_hash"`
+	ProfilePic       string `db:"profile_picture"`
+	ProfilePicUrl    string `json:"profile_picture_url"`
+	Balance          int    `json:"balance" db:"balance"`
+	IsEmailConfirmed bool   `db:"confirmed_email"`
 }
 
 const (

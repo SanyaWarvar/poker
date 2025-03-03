@@ -25,6 +25,10 @@ func (s *Server) CreateApp() *fiber.App {
 	auth := app.Group("/auth")
 	{
 		auth.Post("/sign_up", s.SignUp)
+		auth.Post("/send_code", s.SendCode)
+		auth.Post("/confirm_email", s.ConfirmCode)
+		auth.Post("/sign_in", s.SignIn)
+		auth.Post("/refresh_token", s.RefreshToken)
 	}
 
 	return app

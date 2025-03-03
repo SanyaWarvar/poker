@@ -1,9 +1,8 @@
 package user
 
 import (
-	"errors"
-
-	"github.com/google/uuid"
+	"errors"	
+	"github.com/google/uuid"	
 )
 
 type IUserService interface {
@@ -54,14 +53,14 @@ func (s *UserService) GetUserByUP(user User) (User, error) {
 
 func (s *UserService) GetUserByEP(email, password string) (User, error) {
 	var user User
-	targetUser, err := s.repo.GetUserByE(email)
+	targetUser, err := s.repo.GetUserByE(email)	
 	if err != nil {
 		return user, err
-	}
-
+	}	
 	if s.repo.ComparePassword(password, targetUser.Password) {
 		return targetUser, err
 	}
+
 	return user, errors.New("incorrect password")
 }
 
