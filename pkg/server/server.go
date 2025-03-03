@@ -26,7 +26,9 @@ func (s *Server) CreateApp() *fiber.App {
 	}))
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "*",
+		AllowOriginsFunc: func(origin string) bool {
+			return true
+		},
 		AllowMethods:     "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
 		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
 		AllowCredentials: true,
@@ -51,6 +53,5 @@ func (s *Server) CreateApp() *fiber.App {
 
 func (s *Server) Run(port string) {
 	app := s.CreateApp()
-
 	logrus.Fatal(app.Listen(":" + port))
 }
