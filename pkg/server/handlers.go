@@ -70,7 +70,7 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 		Name:     "access_token",
 		Value:    accessToken,
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   false,
 		Expires:  time.Now().Add(accessTokenTtl),
 	})
 
@@ -78,7 +78,7 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 		Name:     "refresh_token",
 		Value:    refreshToken,
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   false,
 		Expires:  time.Now().Add(refreshTokenTtl),
 	})
 	c.Status(http.StatusCreated)
@@ -123,7 +123,7 @@ func (s *Server) RefreshToken(c *fiber.Ctx) error {
 		Name:     "access_token",
 		Value:    newAccessToken,
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   false,
 		Expires:  time.Now().Add(accessTokenTtl),
 	})
 
@@ -131,7 +131,7 @@ func (s *Server) RefreshToken(c *fiber.Ctx) error {
 		Name:     "refresh_token",
 		Value:    newRefreshToken,
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   false,
 		Expires:  time.Now().Add(refreshTokenTtl),
 	})
 
