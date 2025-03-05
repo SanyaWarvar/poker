@@ -22,10 +22,7 @@ func main() {
 	if err := godotenv.Load(".env"); err != nil {
 		logrus.Fatalf("Error while load dotenv: %s", err.Error())
 	}
-	allowedHosts := os.Getenv("ALLOWED_HOSTS")
-	if allowedHosts == "" {
-		log.Fatal("Error .env ALLOWED_HOSTS is empty:")
-	}
+	
 
 	db, err := server.NewPostgresDB(server.PostgresConfig{
 		Host:     os.Getenv("POSTGRES_HOST"),
@@ -88,5 +85,5 @@ func main() {
 		port = "80"
 	}
 
-	srv.Run(port, allowedHosts)
+	srv.Run(port)
 }
