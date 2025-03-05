@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -20,6 +21,10 @@ func main() {
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 	if err := godotenv.Load(".env"); err != nil {
 		logrus.Fatalf("Error while load dotenv: %s", err.Error())
+	}
+	allowedHosts := os.Getenv("ALLOWED_HOSTS")
+	if allowedHosts == "" {
+		log.Fatal("Error .env ALLOWED_HOSTS is empty:")
 	}
 
 	db, err := server.NewPostgresDB(server.PostgresConfig{
@@ -83,5 +88,5 @@ func main() {
 		port = "80"
 	}
 
-	srv.Run(port)
+	srv.Run(port, allowedHosts)
 }
