@@ -51,7 +51,7 @@ func (s *Server) CreateApp() *fiber.App {
 	return app
 }
 
-func (s *Server) Run(port) {
+func (s *Server) Run(port string) {
 	app := s.CreateApp()
 	logrus.Fatal(app.Listen(":" + port))
 }
