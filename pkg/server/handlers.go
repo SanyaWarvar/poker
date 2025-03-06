@@ -204,3 +204,40 @@ func (s *Server) ConfirmCode(c *fiber.Ctx) error {
 		"message": "Email confirmed",
 	})
 }
+
+func (s *Server) CheckAuth(c *fiber.Ctx) error {
+	accessTokenInput := c.Cookies("access_token")
+
+	if accessTokenInput == "" {
+		return ErrorResponse(c, http.StatusBadRequest, "Access token missing")
+	}
+
+	_, err := s.services.JwtService.ParseToken(accessTokenInput)
+
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, "bad access token")
+	}
+
+	c.Status(http.StatusOK)
+	return c.JSON(map[string]interface{}{
+		"details": "Success",
+	})
+}
+
+func ClearCookies(c *fiber.Ctx, key ...string) {
+	for i := range key {
+		c.Cookie(&fiber.Cookie{
+			Name:    key[i],
+			Expires: time.Now().Add(-time.Hour * 24),
+			Value:   "",
+		})
+	}
+}
+
+func (s *Server) Logout(c *fiber.Ctx) error {
+	ClearCookies(c, "access_token", "refresh_token")
+
+	return c.Status(http.StatusOK).JSON(map[string]interface{}{
+		"details": "Success",
+	})
+}
