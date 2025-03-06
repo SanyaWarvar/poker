@@ -17,7 +17,7 @@ func NewServer(s *Service) *Server {
 	return &Server{services: *s}
 }
 
-func (s *Server) CreateApp(allowedHosts string) *fiber.App {
+func (s *Server) CreateApp() *fiber.App {
 	app := fiber.New()
 	app.Use(logger.New(logger.Config{
 		Format:     "[${ip}:${port}] ${time} ${status} - ${method} ${path}\n",
@@ -26,7 +26,9 @@ func (s *Server) CreateApp(allowedHosts string) *fiber.App {
 	}))
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     allowedHosts,
+		AllowOriginsFunc: func(origin string) bool {
+			return true
+		},
 		AllowMethods:     "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
 		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
 		AllowCredentials: true,
@@ -49,7 +51,7 @@ func (s *Server) CreateApp(allowedHosts string) *fiber.App {
 	return app
 }
 
-func (s *Server) Run(port, allowedHosts string) {
-	app := s.CreateApp(allowedHosts)
+func (s *Server) Run(port string) {
+	app := s.CreateApp()
 	logrus.Fatal(app.Listen(":" + port))
 }
