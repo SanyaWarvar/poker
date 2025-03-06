@@ -72,7 +72,7 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 		HTTPOnly: true,
 		Secure:   true,
 		Expires:  time.Now().Add(accessTokenTtl),
-		
+		SameSite: "None",
 	})
 
 	c.Cookie(&fiber.Cookie{
@@ -81,7 +81,7 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 		HTTPOnly: true,
 		Secure:   true,
 		Expires:  time.Now().Add(refreshTokenTtl),
-		
+		SameSite: "None",
 	})
 	c.Status(http.StatusCreated)
 	return c.JSON(map[string]interface{}{
@@ -127,7 +127,7 @@ func (s *Server) RefreshToken(c *fiber.Ctx) error {
 		HTTPOnly: true,
 		Secure:   true,
 		Expires:  time.Now().Add(accessTokenTtl),
-		
+		SameSite: "None",
 	})
 
 	c.Cookie(&fiber.Cookie{
@@ -136,7 +136,7 @@ func (s *Server) RefreshToken(c *fiber.Ctx) error {
 		HTTPOnly: true,
 		Secure:   true,
 		Expires:  time.Now().Add(refreshTokenTtl),
-		
+		SameSite: "None",
 	})
 
 	c.Status(http.StatusCreated)
