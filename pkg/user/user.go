@@ -55,7 +55,8 @@ func (u *User) GenerateUrl(host string) {
 }
 
 func (u *User) SetDeafultPic() error {
-	file, err := os.OpenFile("user_data/profile_pictures/default_pic.jpg", os.O_RDONLY, 0666)
+	file, err := os.OpenFile("user_data/profile_pictures/default_pic.jpg", os.O_RDONLY, 0666) 
+	// мб поменять это, а то хардкод плохо. но мне все равно как то если честно
 	defer file.Close()
 	if err != nil {
 		return err

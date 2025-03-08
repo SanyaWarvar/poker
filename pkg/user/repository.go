@@ -19,6 +19,7 @@ type IUserRepo interface {
 	ComparePassword(password, hashedPassword string) bool
 	UpdateProfilePic(userId uuid.UUID, encodedPicture string) error
 	UpdateUsername(userId uuid.UUID, username string) error
+	GetUserByUsername(username string) (User, error)
 }
 
 type UserPostgres struct {
@@ -103,4 +104,17 @@ func (r *UserPostgres) UpdateUsername(userId uuid.UUID, username string) error {
 
 	_, err := r.db.Exec(query, username, userId)
 	return err
+}
+func (r *UserPostgres) GetUserByUsername(username string) (User, error) {
+	var output User
+	query := fmt.Sprintf(
+		`
+		SELECT * 
+		FROM users 
+		WHERE username = $1
+		`,
+	)
+
+	err := r.db.Get(&output, query, username)
+	return output, err
 }

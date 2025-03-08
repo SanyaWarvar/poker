@@ -205,7 +205,7 @@ func (s *Server) ConfirmCode(c *fiber.Ctx) error {
 	})
 }
 
-func (s *Server) CheckAuth(c *fiber.Ctx) error {
+func (s *Server) CheckAuthMiddleware(c *fiber.Ctx) error {
 	accessTokenInput := c.Cookies("access_token")
 
 	if accessTokenInput == "" {
@@ -218,8 +218,11 @@ func (s *Server) CheckAuth(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusBadRequest, "bad access token")
 	}
 
-	c.Status(http.StatusOK)
-	return c.JSON(map[string]interface{}{
+	return c.Next()
+}
+
+func (s *Server) CheckAuthEndpoint(c *fiber.Ctx) error {
+	return c.Status(http.StatusOK).JSON(map[string]interface{}{
 		"details": "Success",
 	})
 }

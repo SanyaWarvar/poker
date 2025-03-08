@@ -1,6 +1,7 @@
 package user
 
 import (
+	"encoding/base64"
 	"errors"
 
 	"github.com/google/uuid"
@@ -12,7 +13,8 @@ type IUserService interface {
 	GetUserByEP(email, password string) (User, error)
 	HashPassword(password string) (string, error)
 	GetUserById(userId uuid.UUID) (User, error)
-	UpdateProfilePic(userId uuid.UUID, encodedPicture string) error
+	GetUserByUsername(username string) (User, error)
+	UpdateProfilePic(userId uuid.UUID, picture []byte) error
 	UpdateUsername(userId uuid.UUID, username string) error // будем обновлять именно эту инфу.
 }
 
@@ -70,7 +72,8 @@ func (s *UserService) HashPassword(password string) (string, error) {
 	return s.repo.HashPassword(password)
 }
 
-func (s *UserService) UpdateProfilePic(userId uuid.UUID, encodedPicture string) error {
+func (s *UserService) UpdateProfilePic(userId uuid.UUID, picture []byte) error {
+	encodedPicture := base64.RawStdEncoding.EncodeToString(picture)
 	return s.repo.UpdateProfilePic(userId, encodedPicture)
 }
 
@@ -80,4 +83,8 @@ func (s *UserService) GetUserById(userId uuid.UUID) (User, error) {
 
 func (s *UserService) UpdateUsername(userId uuid.UUID, username string) error {
 	return s.repo.UpdateUsername(userId, username)
+}
+
+func (s *UserService) GetUserByUsername(username string) (User, error) {
+	return s.repo.GetUserByUsername(username)
 }
