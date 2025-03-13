@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -20,6 +21,7 @@ type IUserRepo interface {
 	UpdateProfilePic(userId uuid.UUID, encodedPicture string) error
 	UpdateUsername(userId uuid.UUID, username string) error
 	GetUserByUsername(username string) (User, error)
+	SaveProfilePic(userId uuid.UUID, picture []byte, filename string) error
 }
 
 type UserPostgres struct {
@@ -86,7 +88,7 @@ func (r *UserPostgres) UpdateProfilePic(userId uuid.UUID, encodedPicture string)
 		`
 		UPDATE users
 		SET profile_picture = $1
-		WHERE user_id = $2
+		WHERE id = $2
 		`,
 	)
 
@@ -98,7 +100,7 @@ func (r *UserPostgres) UpdateUsername(userId uuid.UUID, username string) error {
 		`
 		UPDATE users
 		SET username = $1
-		WHERE user_id = $2
+		WHERE id = $2
 		`,
 	)
 
@@ -117,4 +119,8 @@ func (r *UserPostgres) GetUserByUsername(username string) (User, error) {
 
 	err := r.db.Get(&output, query, username)
 	return output, err
+}
+
+func (r *UserPostgres) SaveProfilePic(userId uuid.UUID, picture []byte, filename string) error {
+	return os.WriteFile("user_data/profile_pictures/"+filename, picture, 0644)
 }

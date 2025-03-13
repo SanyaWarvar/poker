@@ -1,22 +1,32 @@
 package server
 
 import (
+	"io"
 	"net/http"
+	"path/filepath"
+	"slices"
 	"time"
 
 	"strings"
 
 	"github.com/SanyaWarvar/poker/pkg/user"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 func (s *Server) SignUp(c *fiber.Ctx) error {
-	var input user.User
+	var input1 struct {
+		Username string `json:"username"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 
-	err := c.BodyParser(&input)
+	err := c.BodyParser(&input1)
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, "invalid json")
 	}
+
+	input := user.User{Username: input1.Username, Email: input1.Email, Password: input1.Password}
 
 	if valid := input.IsValid(); !valid {
 		return ErrorResponse(c, http.StatusBadRequest, "Invalid username or password")
@@ -41,7 +51,10 @@ func (s *Server) SignUp(c *fiber.Ctx) error {
 }
 
 func (s *Server) SignIn(c *fiber.Ctx) error {
-	var input user.User
+	var input struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 
 	if err := c.BodyParser(&input); err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, "invalid json")
@@ -212,12 +225,12 @@ func (s *Server) CheckAuthMiddleware(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusBadRequest, "Access token missing")
 	}
 
-	_, err := s.services.JwtService.ParseToken(accessTokenInput)
+	token, err := s.services.JwtService.ParseToken(accessTokenInput)
 
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, "bad access token")
 	}
-
+	c.Locals("userId", token.UserId)
 	return c.Next()
 }
 
@@ -243,4 +256,70 @@ func (s *Server) Logout(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(map[string]interface{}{
 		"details": "Success",
 	})
+}
+
+func (s *Server) GetUser(c *fiber.Ctx) error {
+	username := c.Params("username")
+	if username == "" {
+		return c.Status(http.StatusBadRequest).JSON(map[string]string{"details": "username cant be empty"})
+	}
+	user, err := s.services.UserService.GetUserByUsername(username)
+	if err != nil { // TODO возможно могут быть другие проблемы?
+		return c.Status(http.StatusBadRequest).JSON(map[string]string{"details": "user not found"})
+	}
+	user.GenerateUrl(c.Hostname())
+	return c.Status(http.StatusOK).JSON(user)
+}
+
+func (s *Server) UpdateUserInfo(c *fiber.Ctx) error {
+	var input struct {
+		Username string `json:"username"`
+	}
+	err := c.BodyParser(&input)
+	if err != nil || !user.CheckUsername(input.Username) {
+		return c.Status(http.StatusBadRequest).JSON(map[string]string{"details": "bad json"})
+	}
+	userIdInterface := c.Locals("userId")
+	userId, ok := userIdInterface.(uuid.UUID)
+	if !ok {
+		return c.Status(http.StatusUnauthorized).JSON(map[string]string{"details": "bad user id"})
+	}
+	err = s.services.UserService.UpdateUsername(userId, input.Username)
+	return c.Status(http.StatusNoContent).JSON(nil)
+}
+
+func (s *Server) UpdateProfilePic(c *fiber.Ctx) error {
+
+	ProfilePic, err := c.FormFile("profile_pic")
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, "bad form data")
+
+	}
+	userIdInterface := c.Locals("userId")
+	userId, ok := userIdInterface.(uuid.UUID)
+	if !ok {
+		return ErrorResponse(c, http.StatusUnauthorized, "bad user id")
+	}
+	file, err := ProfilePic.Open()
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, "Unable to open file")
+	}
+	defer file.Close()
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, "Unable to open file")
+
+	}
+	suffix := filepath.Ext(ProfilePic.Filename)
+	ValidFileSuffixForProfilePicture := []string{".gif", ".jpg", ".png"}
+	if !slices.Contains(ValidFileSuffixForProfilePicture, suffix) {
+		return ErrorResponse(c, http.StatusBadRequest, "Bad file format")
+	}
+	user, err := s.services.UserService.GetUserById(userId)
+	err = s.services.UserService.UpdateProfilePic(userId, fileBytes, user.Username)
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+	return c.Status(http.StatusNoContent).JSON(nil)
 }

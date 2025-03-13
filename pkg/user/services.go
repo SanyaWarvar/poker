@@ -14,7 +14,7 @@ type IUserService interface {
 	HashPassword(password string) (string, error)
 	GetUserById(userId uuid.UUID) (User, error)
 	GetUserByUsername(username string) (User, error)
-	UpdateProfilePic(userId uuid.UUID, picture []byte) error
+	UpdateProfilePic(userId uuid.UUID, picture []byte, filename string) error
 	UpdateUsername(userId uuid.UUID, username string) error // будем обновлять именно эту инфу.
 }
 
@@ -72,8 +72,12 @@ func (s *UserService) HashPassword(password string) (string, error) {
 	return s.repo.HashPassword(password)
 }
 
-func (s *UserService) UpdateProfilePic(userId uuid.UUID, picture []byte) error {
+func (s *UserService) UpdateProfilePic(userId uuid.UUID, picture []byte, filename string) error {
 	encodedPicture := base64.RawStdEncoding.EncodeToString(picture)
+	err := s.repo.SaveProfilePic(userId, picture, filename)
+	if err != nil {
+		return nil
+	}
 	return s.repo.UpdateProfilePic(userId, encodedPicture)
 }
 

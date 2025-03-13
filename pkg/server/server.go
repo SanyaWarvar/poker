@@ -39,6 +39,8 @@ func (s *Server) CreateApp() *fiber.App {
 		return c.JSON(map[string]string{"details": "ok"})
 	})
 
+	app.Static("/profiles", "./user_data/profile_pictures")
+
 	auth := app.Group("/auth")
 	{
 		auth.Post("/sign_up", s.SignUp)
@@ -49,12 +51,14 @@ func (s *Server) CreateApp() *fiber.App {
 		auth.Post("/check_auth", s.CheckAuthMiddleware, s.CheckAuthEndpoint)
 		auth.Post("/logout", s.Logout)
 	}
-	/* здесь накинь ендпоинтов для юзер ветки. проверять токены не нужно, тут накинуто middleware
+
 	user := app.Group("/user", s.CheckAuthMiddleware)
 	{
-
+		user.Get(":username", s.GetUser)
+		user.Put("/", s.UpdateUserInfo)
+		user.Put("/profile_pic", s.UpdateProfilePic)
 	}
-	*/
+
 	return app
 }
 
