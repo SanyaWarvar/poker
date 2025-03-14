@@ -1,6 +1,8 @@
 package user
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"os"
 
@@ -22,6 +24,7 @@ type IUserRepo interface {
 	UpdateUsername(userId uuid.UUID, username string) error
 	GetUserByUsername(username string) (User, error)
 	SaveProfilePic(userId uuid.UUID, picture []byte, filename string) error
+	ChangeBalance(userId uuid.UUID, delta int) error
 }
 
 type UserPostgres struct {
@@ -123,4 +126,24 @@ func (r *UserPostgres) GetUserByUsername(username string) (User, error) {
 
 func (r *UserPostgres) SaveProfilePic(userId uuid.UUID, picture []byte, filename string) error {
 	return os.WriteFile("user_data/profile_pictures/"+filename, picture, 0644)
+}
+
+func (r *UserPostgres) ChangeBalance(userId uuid.UUID, delta int) error {
+	query := fmt.Sprintf(
+		`
+		UPDATE users SET balance = balance + $1
+		WHERE (($1 >= 0) OR ($1 < 0 AND $1 <= balance)) AND id = $2
+		`,
+	)
+	tx, err := r.db.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: false})
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(query, delta, userId)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	err = tx.Commit()
+	return err
 }

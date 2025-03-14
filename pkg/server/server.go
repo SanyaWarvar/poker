@@ -73,6 +73,7 @@ func (s *Server) CreateApp() *fiber.App {
 		user.Get(":username", s.GetUser)
 		user.Put("/", s.UpdateUserInfo)
 		user.Put("/profile_pic", s.UpdateProfilePic)
+		user.Post("/daily", s.DailyReward)
 	}
 
 	return app

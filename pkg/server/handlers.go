@@ -438,3 +438,26 @@ func (s *Server) UpdateProfilePic(c *fiber.Ctx) error {
 	}
 	return c.Status(http.StatusNoContent).JSON(nil)
 }
+
+// DailyReward
+// @Summary Ежедневный вход
+// @Description Получить награду за ежедневный вход
+// @Security ApiAuth
+// @Tags user
+// @Produce json
+// @Success 200 {object} user.DailyReward "Успех"
+// @Failure 400 {object} map[string]string "next possible daily reward will available at {date}"
+// @Failure 401 {object} map[string]string "bad user id"
+// @Router /user/daily [post]
+func (s *Server) DailyReward(c *fiber.Ctx) error {
+	userIdInterface := c.Locals("userId")
+	userId, ok := userIdInterface.(uuid.UUID)
+	if !ok {
+		return ErrorResponse(c, http.StatusUnauthorized, "bad user id")
+	}
+	reward, err := s.services.UserService.GetDaily(userId)
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+	return c.Status(http.StatusOK).JSON(reward)
+}

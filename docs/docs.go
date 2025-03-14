@@ -408,6 +408,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/daily": {
+            "post": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Получить награду за ежедневный вход",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Ежедневный вход",
+                "responses": {
+                    "200": {
+                        "description": "Успех",
+                        "schema": {
+                            "$ref": "#/definitions/user.DailyReward"
+                        }
+                    },
+                    "400": {
+                        "description": "next possible daily reward will available at {date}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "bad user id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/user/profile_pic": {
             "put": {
                 "security": [
@@ -583,6 +626,19 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "john doe"
+                }
+            }
+        },
+        "user.DailyReward": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1000
+                },
+                "angle_delta": {
+                    "type": "integer",
+                    "example": 27
                 }
             }
         },

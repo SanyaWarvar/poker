@@ -15,7 +15,7 @@ type Service struct {
 func NewService(repos *Repository) *Service {
 	return &Service{
 		JwtService:       auth.NewJwtManagerService(repos.JwtRepo),
-		UserService:      user.NewUserService(repos.UserRepo),
+		UserService:      user.NewUserService(repos.UserRepo, repos.UserCacheRepo),
 		EmailSmtpService: emailsmtp.NewEmailSmtpService(repos.EmailSmtpRepo, repos.EmailSmtpCacheRepo),
 	}
 }

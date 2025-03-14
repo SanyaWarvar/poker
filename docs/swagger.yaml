@@ -41,6 +41,15 @@ definitions:
         example: john doe
         type: string
     type: object
+  user.DailyReward:
+    properties:
+      amount:
+        example: 1000
+        type: integer
+      angle_delta:
+        example: 27
+        type: integer
+    type: object
   user.User:
     properties:
       balance:
@@ -349,6 +358,33 @@ paths:
       security:
       - ApiAuth: []
       summary: Получить пользователя по имени
+      tags:
+      - user
+  /user/daily:
+    post:
+      description: Получить награду за ежедневный вход
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успех
+          schema:
+            $ref: '#/definitions/user.DailyReward'
+        "400":
+          description: next possible daily reward will available at {date}
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: bad user id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Ежедневный вход
       tags:
       - user
   /user/profile_pic:
