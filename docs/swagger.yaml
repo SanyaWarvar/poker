@@ -1,0 +1,401 @@
+basePath: /
+definitions:
+  server.ConfirmCodeInput:
+    properties:
+      code:
+        example: "123456"
+        type: string
+      email:
+        example: john@example.com
+        type: string
+    type: object
+  server.EmailAndPasswordInput:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: password
+        type: string
+    type: object
+  server.ErrorResponseStruct:
+    properties:
+      message:
+        type: string
+    type: object
+  server.UserInput:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: password
+        type: string
+      username:
+        example: john_doe
+        type: string
+    type: object
+  server.UsernameInput:
+    properties:
+      username:
+        example: john doe
+        type: string
+    type: object
+  user.User:
+    properties:
+      balance:
+        type: integer
+      email:
+        type: string
+      profile_picture_url:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - username
+    type: object
+host: localhost:80
+info:
+  contact:
+    email: fiber@swagger.io
+    name: API Support
+  description: This is a poker server
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Card House API
+  version: "1.0"
+paths:
+  /auth/check_auth:
+    post:
+      consumes:
+      - application/json
+      description: Проверка содержится ли в куках валидный токен доступа
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный ответ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: bad access token
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+      security:
+      - ApiAuth: []
+      summary: Проверка валидности токенов
+      tags:
+      - auth
+  /auth/confirm_email:
+    post:
+      consumes:
+      - application/json
+      description: Подтвердить почту
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/server.ConfirmCodeInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешный ответ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid confirmation code
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+        "500":
+          description: Failed to confirm code
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+      summary: Подтвердить почту
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: Очищает все куки (токены)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный ответ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Выйти из аккаунта
+      tags:
+      - auth
+  /auth/refresh_token:
+    post:
+      description: Обновляет хедеры с авторизационными токенами
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешный ответ
+          headers:
+            SetCookie:
+              description: refresh_token secure=true http_only=true
+              type: string
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad access token
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+        "401":
+          description: Bad refresh token
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+        "500":
+          description: Failed to generate tokens
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+      summary: Обновление токенов
+      tags:
+      - auth
+  /auth/send_code:
+    post:
+      consumes:
+      - application/json
+      description: Отправляет код подтверждения почты
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/server.EmailAndPasswordInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешный ответ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: email already confirmed
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+      summary: Отрпавить код
+      tags:
+      - auth
+  /auth/sign_in:
+    post:
+      consumes:
+      - application/json
+      description: Вход в аккаунт с подтвержденной почтой
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/server.EmailAndPasswordInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешный ответ
+          headers:
+            SetCookie1:
+              description: access_token secure=true http_only=true
+              type: string
+            SetCookie2:
+              description: refresh_token secure=true http_only=true
+              type: string
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid json
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+        "401":
+          description: Invalid email or password
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+        "403":
+          description: Email not confirmed
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+        "500":
+          description: Failed to generate tokens
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+      summary: Вход
+      tags:
+      - auth
+  /auth/sign_up:
+    post:
+      consumes:
+      - application/json
+      description: Регистрирует нового пользователя
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/server.UserInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешный ответ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid username or password
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+        "404":
+          description: This username already exist
+          schema:
+            $ref: '#/definitions/server.ErrorResponseStruct'
+      summary: Регистрирация
+      tags:
+      - auth
+  /user/:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет username пользователя
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/server.UsernameInput'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: bad json
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: bad user id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: user not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Обновить пользовательские данные
+      tags:
+      - user
+  /user/{username}:
+    get:
+      description: Возвращает данные пользователя по его имени.
+      parameters:
+      - description: Имя пользователя
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный ответ
+          schema:
+            $ref: '#/definitions/user.User'
+        "400":
+          description: username cant be empty
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: user not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Получить пользователя по имени
+      tags:
+      - user
+  /user/profile_pic:
+    put:
+      consumes:
+      - multipart/form-data
+      description: Обновляет аватар пользователя. Принимает изображение в формате
+        GIF, JPG или PNG.
+      parameters:
+      - description: Изображение для аватара
+        in: formData
+        name: profile_pic
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: unable to open file
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: bad user id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: user not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Обновить аватар пользователя
+      tags:
+      - user
+securityDefinitions:
+  ApiAuth:
+    in: SetCookie
+    name: access_token
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,612 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a poker server",
+        "title": "Card House API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "email": "fiber@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:80",
+    "basePath": "/",
+    "paths": {
+        "/auth/check_auth": {
+            "post": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Проверка содержится ли в куках валидный токен доступа",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Проверка валидности токенов",
+                "responses": {
+                    "200": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "bad access token",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/confirm_email": {
+            "post": {
+                "description": "Подтвердить почту",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Подтвердить почту",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.ConfirmCodeInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid confirmation code",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to confirm code",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "description": "Очищает все куки (токены)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Выйти из аккаунта",
+                "responses": {
+                    "200": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh_token": {
+            "post": {
+                "description": "Обновляет хедеры с авторизационными токенами",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Обновление токенов",
+                "responses": {
+                    "201": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        "headers": {
+                            "SetCookie": {
+                                "type": "string",
+                                "description": "refresh_token secure=true http_only=true"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad access token",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    },
+                    "401": {
+                        "description": "Bad refresh token",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to generate tokens",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/send_code": {
+            "post": {
+                "description": "Отправляет код подтверждения почты",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Отрпавить код",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.EmailAndPasswordInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "email already confirmed",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/sign_in": {
+            "post": {
+                "description": "Вход в аккаунт с подтвержденной почтой",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Вход",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.EmailAndPasswordInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        "headers": {
+                            "SetCookie1": {
+                                "type": "string",
+                                "description": "access_token secure=true http_only=true"
+                            },
+                            "SetCookie2": {
+                                "type": "string",
+                                "description": "refresh_token secure=true http_only=true"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid json",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid email or password",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not confirmed",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to generate tokens",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/sign_up": {
+            "post": {
+                "description": "Регистрирует нового пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Регистрирация",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.UserInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid username or password",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    },
+                    "404": {
+                        "description": "This username already exist",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponseStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/": {
+            "put": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Обновляет username пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Обновить пользовательские данные",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.UsernameInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "bad json",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "bad user id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "user not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/profile_pic": {
+            "put": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Обновляет аватар пользователя. Принимает изображение в формате GIF, JPG или PNG.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Обновить аватар пользователя",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Изображение для аватара",
+                        "name": "profile_pic",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "unable to open file",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "bad user id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "user not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{username}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Возвращает данные пользователя по его имени.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Получить пользователя по имени",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Имя пользователя",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "$ref": "#/definitions/user.User"
+                        }
+                    },
+                    "400": {
+                        "description": "username cant be empty",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "user not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "server.ConfirmCodeInput": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "123456"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                }
+            }
+        },
+        "server.EmailAndPasswordInput": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "password"
+                }
+            }
+        },
+        "server.ErrorResponseStruct": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.UserInput": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "password"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "john_doe"
+                }
+            }
+        },
+        "server.UsernameInput": {
+            "type": "object",
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "example": "john doe"
+                }
+            }
+        },
+        "user.User": {
+            "type": "object",
+            "required": [
+                "email",
+                "username"
+            ],
+            "properties": {
+                "balance": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "profile_picture_url": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiAuth": {
+            "type": "apiKey",
+            "name": "access_token",
+            "in": "SetCookie"
+        }
+    }
+}

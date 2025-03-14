@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// User представляет собой модель пользователя.
+// @Schema
 type User struct {
 	Id               uuid.UUID `json:"-"`
 	Username         string    `json:"username" binding:"required" db:"username"`

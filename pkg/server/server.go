@@ -3,10 +3,12 @@ package server
 import (
 	"net/http"
 
+	_ "github.com/SanyaWarvar/poker/docs"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/sirupsen/logrus"
+	fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
 type Server struct {
@@ -17,6 +19,20 @@ func NewServer(s *Service) *Server {
 	return &Server{services: *s}
 }
 
+// @securityDefinitions.apikey ApiAuth
+// @in SetCookie
+// @name access_token
+
+// @title Card House API
+// @version 1.0
+// @description This is a poker server
+// @termsOfService http://swagger.io/terms/
+// @contact.name API Support
+// @contact.email fiber@swagger.io
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @host localhost:80
+// @BasePath /
 func (s *Server) CreateApp() *fiber.App {
 	app := fiber.New()
 	app.Use(logger.New(logger.Config{
@@ -38,7 +54,7 @@ func (s *Server) CreateApp() *fiber.App {
 		c.Status(http.StatusOK)
 		return c.JSON(map[string]string{"details": "ok"})
 	})
-
+	app.Get("/swagger/*", fiberSwagger.WrapHandler)
 	app.Static("/profiles", "./user_data/profile_pictures")
 
 	auth := app.Group("/auth")
