@@ -10,15 +10,17 @@ import (
 	"github.com/google/uuid"
 )
 
+// User представляет собой модель пользователя.
+// @Schema
 type User struct {
-	Id               uuid.UUID
-	Username         string `json:"username" binding:"required" db:"username"`
-	Email            string `json:"email" binding:"required" db:"email"`
-	Password         string `json:"password" binding:"required" db:"password_hash"`
-	ProfilePic       string `db:"profile_picture"`
-	ProfilePicUrl    string `json:"profile_picture_url"`
-	Balance          int    `json:"balance" db:"balance"`
-	IsEmailConfirmed bool   `db:"confirmed_email"`
+	Id               uuid.UUID `json:"-"`
+	Username         string    `json:"username" binding:"required" db:"username"`
+	Email            string    `json:"email" binding:"required" db:"email"`
+	Password         string    `json:"-" binding:"required" db:"password_hash"`
+	ProfilePic       string    `json:"-" db:"profile_picture"`
+	ProfilePicUrl    string    `json:"profile_picture_url"`
+	Balance          int       `json:"balance" db:"balance"`
+	IsEmailConfirmed bool      `json:"-" db:"confirmed_email"`
 }
 
 const (
@@ -50,12 +52,26 @@ func (u *User) IsValid() bool {
 	return false
 }
 
+func CheckUsername(username string) bool {
+	matched, err := regexp.Match(UsernamePattern, []byte(username))
+	usernameLen := len([]rune(username))
+	if err != nil || !matched {
+		return false
+	}
+
+	if usernameLen <= UsernameMaxLen && usernameLen >= UsernameMinLen {
+		return true
+	}
+	return false
+}
+
 func (u *User) GenerateUrl(host string) {
 	u.ProfilePicUrl = fmt.Sprintf("%s/profiles/%s", host, u.Username)
 }
 
 func (u *User) SetDeafultPic() error {
 	file, err := os.OpenFile("user_data/profile_pictures/default_pic.jpg", os.O_RDONLY, 0666)
+	// мб поменять это, а то хардкод плохо. но мне все равно как то если честно
 	defer file.Close()
 	if err != nil {
 		return err

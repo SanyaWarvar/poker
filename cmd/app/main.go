@@ -21,7 +21,6 @@ func main() {
 	if err := godotenv.Load(".env"); err != nil {
 		logrus.Fatalf("Error while load dotenv: %s", err.Error())
 	}
-	
 
 	db, err := server.NewPostgresDB(server.PostgresConfig{
 		Host:     os.Getenv("POSTGRES_HOST"),

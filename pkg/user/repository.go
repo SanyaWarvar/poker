@@ -1,7 +1,10 @@
 package user
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -17,7 +20,11 @@ type IUserRepo interface {
 	GetUserByE(email string) (User, error)
 	HashPassword(password string) (string, error)
 	ComparePassword(password, hashedPassword string) bool
-	UpdateProfilePic(userId uuid.UUID, path string) error
+	UpdateProfilePic(userId uuid.UUID, encodedPicture string) error
+	UpdateUsername(userId uuid.UUID, username string) error
+	GetUserByUsername(username string) (User, error)
+	SaveProfilePic(userId uuid.UUID, picture []byte, filename string) error
+	ChangeBalance(userId uuid.UUID, delta int) error
 }
 
 type UserPostgres struct {
@@ -79,16 +86,64 @@ func (r *UserPostgres) ComparePassword(password, hashedPassword string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)) == nil
 }
 
-func (r *UserPostgres) UpdateProfilePic(userId uuid.UUID, path string) error {
-
+func (r *UserPostgres) UpdateProfilePic(userId uuid.UUID, encodedPicture string) error {
 	query := fmt.Sprintf(
 		`
 		UPDATE users
 		SET profile_picture = $1
-		WHERE user_id = $2
+		WHERE id = $2
 		`,
 	)
 
-	_, err := r.db.Exec(query, path, userId)
+	_, err := r.db.Exec(query, encodedPicture, userId)
+	return err
+}
+func (r *UserPostgres) UpdateUsername(userId uuid.UUID, username string) error {
+	query := fmt.Sprintf(
+		`
+		UPDATE users
+		SET username = $1
+		WHERE id = $2
+		`,
+	)
+
+	_, err := r.db.Exec(query, username, userId)
+	return err
+}
+func (r *UserPostgres) GetUserByUsername(username string) (User, error) {
+	var output User
+	query := fmt.Sprintf(
+		`
+		SELECT * 
+		FROM users 
+		WHERE username = $1
+		`,
+	)
+
+	err := r.db.Get(&output, query, username)
+	return output, err
+}
+
+func (r *UserPostgres) SaveProfilePic(userId uuid.UUID, picture []byte, filename string) error {
+	return os.WriteFile("user_data/profile_pictures/"+filename, picture, 0644)
+}
+
+func (r *UserPostgres) ChangeBalance(userId uuid.UUID, delta int) error {
+	query := fmt.Sprintf(
+		`
+		UPDATE users SET balance = balance + $1
+		WHERE (($1 >= 0) OR ($1 < 0 AND $1 <= balance)) AND id = $2
+		`,
+	)
+	tx, err := r.db.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: false})
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(query, delta, userId)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	err = tx.Commit()
 	return err
 }

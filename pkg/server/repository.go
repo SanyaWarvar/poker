@@ -11,6 +11,7 @@ import (
 type Repository struct {
 	JwtRepo            auth.IJwtManagerRepo
 	UserRepo           user.IUserRepo
+	UserCacheRepo      user.IUserCacheRepo
 	EmailSmtpRepo      emailsmtp.IEmailSmtpRepo
 	EmailSmtpCacheRepo emailsmtp.IEmailCacheRepo
 }
@@ -25,6 +26,7 @@ func NewRepository(
 	return &Repository{
 		JwtRepo:            auth.NewJwtManagerPostgres(db, jwtCfg),
 		UserRepo:           user.NewUserPostgres(db),
+		UserCacheRepo:      user.NewUserCacheRepo(cacheDb),
 		EmailSmtpRepo:      emailsmtp.NewEmailSmtpPostgres(db, emailCfg),
 		EmailSmtpCacheRepo: emailsmtp.NewEmailCacheRepo(cacheDb, emailCfg.CodeExp),
 	}
