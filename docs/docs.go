@@ -23,43 +23,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/check_auth": {
-            "post": {
-                "security": [
-                    {
-                        "ApiAuth": []
-                    }
-                ],
-                "description": "Проверка содержится ли в куках валидный токен доступа",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Проверка валидности токенов",
-                "responses": {
-                    "200": {
-                        "description": "Успешный ответ",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "bad access token",
-                        "schema": {
-                            "$ref": "#/definitions/server.ErrorResponseStruct"
-                        }
-                    }
-                }
-            }
-        },
         "/auth/confirm_email": {
             "post": {
                 "description": "Подтвердить почту",
@@ -109,29 +72,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/logout": {
-            "post": {
-                "description": "Очищает все куки (токены)",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Выйти из аккаунта",
-                "responses": {
-                    "200": {
-                        "description": "Успешный ответ",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/auth/refresh_token": {
             "post": {
                 "description": "Обновляет хедеры с авторизационными токенами",
@@ -142,20 +82,22 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Обновление токенов",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.RefreshInput"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Успешный ответ",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        },
-                        "headers": {
-                            "SetCookie": {
-                                "type": "string",
-                                "description": "refresh_token secure=true http_only=true"
-                            }
+                            "$ref": "#/definitions/auth.RefreshInput"
                         }
                     },
                     "400": {
@@ -250,20 +192,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Успешный ответ",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        },
-                        "headers": {
-                            "SetCookie1": {
-                                "type": "string",
-                                "description": "access_token secure=true http_only=true"
-                            },
-                            "SetCookie2": {
-                                "type": "string",
-                                "description": "refresh_token secure=true http_only=true"
-                            }
+                            "$ref": "#/definitions/server.SignInOutput"
                         }
                     },
                     "400": {
@@ -569,6 +498,21 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "auth.RefreshInput": {
+            "type": "object",
+            "required": [
+                "access_token",
+                "refresh_token"
+            ],
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
         "server.ConfirmCodeInput": {
             "type": "object",
             "properties": {
@@ -600,6 +544,17 @@ const docTemplate = `{
             "properties": {
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "server.SignInOutput": {
+            "type": "object",
+            "properties": {
+                "tokens": {
+                    "$ref": "#/definitions/auth.RefreshInput"
+                },
+                "user": {
+                    "$ref": "#/definitions/user.User"
                 }
             }
         },
@@ -676,7 +631,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:80",
+	Host:             "https://poker-tt7i.onrender.com",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Card House API",

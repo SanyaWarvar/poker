@@ -64,8 +64,6 @@ func (s *Server) CreateApp() *fiber.App {
 		auth.Post("/confirm_email", s.ConfirmCode)
 		auth.Post("/sign_in", s.SignIn)
 		auth.Post("/refresh_token", s.RefreshToken)
-		auth.Post("/check_auth", s.CheckAuthMiddleware, s.CheckAuthEndpoint)
-		auth.Post("/logout", s.Logout)
 	}
 
 	user := app.Group("/user", s.CheckAuthMiddleware)

@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"path/filepath"
 	"slices"
-	"time"
 
 	"strings"
 
+	"github.com/SanyaWarvar/poker/pkg/auth"
 	"github.com/SanyaWarvar/poker/pkg/user"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -74,6 +74,13 @@ type EmailAndPasswordInput struct {
 	Password string `json:"password" example:"password" binding:"reqired"`
 }
 
+// SignInOutput
+// @Schema
+type SignInOutput struct {
+	Tokens auth.RefreshInput `json:"tokens"`
+	User   user.User         `json:"user"`
+}
+
 // SignIn
 // @Summary Вход
 // @Description Вход в аккаунт с подтвержденной почтой
@@ -81,9 +88,7 @@ type EmailAndPasswordInput struct {
 // @Accept json
 // @Produce json
 // @Param body body EmailAndPasswordInput true "Данные пользователя"
-// @Success 201 {object} user.user "Успешный ответ"
-// @Header 201 {string} SetCookie1 "access_token secure=true http_only=true"
-// @Header 201 {string} SetCookie2 "refresh_token secure=true http_only=true"
+// @Success 201 {object} SignInOutput "Успешный ответ"
 // @Failure 400 {object} ErrorResponseStruct "Invalid json"
 // @Failure 401 {object} ErrorResponseStruct "Invalid email or password"
 // @Failure 403 {object} ErrorResponseStruct "Email not confirmed""
@@ -111,29 +116,11 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusInternalServerError, "Failed to generate tokens")
 	}
 
-	accessTokenTtl, refreshTokenTtl := s.services.JwtService.GetTokensTtl()
 
-	c.Cookie(&fiber.Cookie{
-		Name:     "access_token",
-		Domain:   "http://localhost:5173",
-		Value:    accessToken,
-		HTTPOnly: true,
-		Secure:   true,
-		Expires:  time.Now().Add(accessTokenTtl),
-		SameSite: "None",
+	return c.Status(http.StatusCreated).JSON(SignInOutput{
+		Tokens: auth.RefreshInput{AccessToken: accessToken, RefreshToken: refreshToken},
+		User:   user,
 	})
-
-	c.Cookie(&fiber.Cookie{
-		Name:     "refresh_token",
-		Domain:   "http://localhost:5173",
-		Value:    refreshToken,
-		HTTPOnly: true,
-		Secure:   true,
-		Expires:  time.Now().Add(refreshTokenTtl),
-		SameSite: "None",
-	})
-	c.Status(http.StatusCreated)
-	return c.JSON(user)
 }
 
 // RefreshToken
@@ -141,9 +128,8 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 // @Description Обновляет хедеры с авторизационными токенами
 // @Tags auth
 // @Produce json
-// @Success 201 {object} map[string]string "Успешный ответ"
-// @Header 201 {string} SetCookie "access_token secure=true http_only=true"
-// @Header 201 {string} SetCookie "refresh_token secure=true http_only=true"
+// @Param body body auth.RefreshInput true "Данные пользователя"
+// @Success 201 {object} auth.RefreshInput "Успешный ответ"
 // @Failure 400 {object} ErrorResponseStruct "Refresh token missing"
 // @Failure 400 {object} ErrorResponseStruct "Access token missing"
 // @Failure 400 {object} ErrorResponseStruct "Bad access token"
@@ -151,17 +137,14 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponseStruct "Failed to generate tokens"
 // @Router /auth/refresh_token [post]
 func (s *Server) RefreshToken(c *fiber.Ctx) error {
-	refreshTokenInput := c.Cookies("refresh_token")
-	accessTokenInput := c.Cookies("access_token")
-	if refreshTokenInput == "" {
-		return ErrorResponse(c, http.StatusBadRequest, "Refresh token missing")
+	var input auth.RefreshInput
+
+	err := c.BodyParser(&input)
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, "no access or refresh token")
 	}
 
-	if accessTokenInput == "" {
-		return ErrorResponse(c, http.StatusBadRequest, "Access token missing")
-	}
-
-	accessToken, err := s.services.JwtService.ParseToken(accessTokenInput)
+	accessToken, err := s.services.JwtService.ParseToken(input.AccessToken)
 
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, "bad access token")
@@ -179,32 +162,8 @@ func (s *Server) RefreshToken(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusInternalServerError, "Failed to generate tokens")
 	}
 
-	accessTokenTtl, refreshTokenTtl := s.services.JwtService.GetTokensTtl()
+	return c.Status(http.StatusCreated).JSON(auth.RefreshInput{AccessToken: newAccessToken, RefreshToken: newRefreshToken})
 
-	c.Cookie(&fiber.Cookie{
-		Name:     "access_token",
-		Domain:   "http://localhost:5173",
-		Value:    newAccessToken,
-		HTTPOnly: true,
-		Secure:   true,
-		Expires:  time.Now().Add(accessTokenTtl),
-		SameSite: "None",
-	})
-
-	c.Cookie(&fiber.Cookie{
-		Name:     "refresh_token",
-		Domain:   "http://localhost:5173",
-		Value:    newRefreshToken,
-		HTTPOnly: true,
-		Secure:   true,
-		Expires:  time.Now().Add(refreshTokenTtl),
-		SameSite: "None",
-	})
-
-	c.Status(http.StatusCreated)
-	return c.JSON(map[string]interface{}{
-		"details": "Token refreshed",
-	})
 }
 
 // SendCode
@@ -272,61 +231,18 @@ func (s *Server) ConfirmCode(c *fiber.Ctx) error {
 }
 
 func (s *Server) CheckAuthMiddleware(c *fiber.Ctx) error {
-	accessTokenInput := c.Cookies("access_token")
-
-	if accessTokenInput == "" {
+	accessToken := strings.Split(c.Get("Authorization"), " ")[1]
+	if accessToken == "" {
 		return ErrorResponse(c, http.StatusBadRequest, "Access token missing")
 	}
 
-	token, err := s.services.JwtService.ParseToken(accessTokenInput)
+	token, err := s.services.JwtService.ParseToken(accessToken)
 
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, "bad access token")
 	}
 	c.Locals("userId", token.UserId)
 	return c.Next()
-}
-
-// CheckAuth
-// @Summary Проверка валидности токенов
-// @Description Проверка содержится ли в куках валидный токен доступа
-// @Security ApiAuth
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Success 200 {object} map[string]string "Успешный ответ"
-// @Failure 401 {object} ErrorResponseStruct "access token missing"
-// @Failure 401 {object} ErrorResponseStruct "bad access token"
-// @Router /auth/check_auth [post]
-func (s *Server) CheckAuthEndpoint(c *fiber.Ctx) error {
-	return c.Status(http.StatusOK).JSON(map[string]interface{}{
-		"details": "Success",
-	})
-}
-
-func ClearCookies(c *fiber.Ctx, key ...string) {
-	for i := range key {
-		c.Cookie(&fiber.Cookie{
-			Name:    key[i],
-			Expires: time.Now().Add(-time.Hour * 24),
-			Value:   "",
-		})
-	}
-}
-
-// Logout
-// @Summary Выйти из аккаунта
-// @Description Очищает все куки (токены)
-// @Tags auth
-// @Produce json
-// @Success 200 {object} map[string]string "Успешный ответ"
-// @Router /auth/logout [post]
-func (s *Server) Logout(c *fiber.Ctx) error {
-	ClearCookies(c, "access_token", "refresh_token")
-
-	return c.Status(http.StatusOK).JSON(map[string]interface{}{
-		"details": "Success",
-	})
 }
 
 // GetUser
