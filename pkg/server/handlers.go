@@ -116,11 +116,11 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusInternalServerError, "Failed to generate tokens")
 	}
 
+
 	return c.Status(http.StatusCreated).JSON(SignInOutput{
 		Tokens: auth.RefreshInput{AccessToken: accessToken, RefreshToken: refreshToken},
 		User:   user,
 	})
-
 }
 
 // RefreshToken
@@ -163,6 +163,7 @@ func (s *Server) RefreshToken(c *fiber.Ctx) error {
 	}
 
 	return c.Status(http.StatusCreated).JSON(auth.RefreshInput{AccessToken: newAccessToken, RefreshToken: newRefreshToken})
+
 }
 
 // SendCode
