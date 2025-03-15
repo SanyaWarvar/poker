@@ -31,7 +31,7 @@ func NewServer(s *Service) *Server {
 // @contact.email fiber@swagger.io
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-// @host localhost:80
+// @host https://poker-tt7i.onrender.com
 // @BasePath /
 func (s *Server) CreateApp() *fiber.App {
 	app := fiber.New()

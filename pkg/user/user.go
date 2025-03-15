@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -21,6 +23,7 @@ type User struct {
 	ProfilePicUrl    string    `json:"profile_picture_url"`
 	Balance          int       `json:"balance" db:"balance"`
 	IsEmailConfirmed bool      `json:"-" db:"confirmed_email"`
+	PicExt           string    `json:"-" db:"pic_ext"`
 }
 
 const (
@@ -65,13 +68,38 @@ func CheckUsername(username string) bool {
 	return false
 }
 
-func (u *User) GenerateUrl(host string) {
-	u.ProfilePicUrl = fmt.Sprintf("%s/profiles/%s", host, u.Username)
+func (u *User) GenerateUrl(host string) error {
+	targetName := u.Id.String()
+	var foundFile string
+
+	err := filepath.Walk("./user_data/profile_pictures", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			fileNameWithoutExt := strings.TrimSuffix(info.Name(), filepath.Ext(info.Name()))
+			if fileNameWithoutExt == targetName {
+				foundFile = filepath.Ext(info.Name())
+				return filepath.SkipDir
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("ошибка при обходе директории: %w", err)
+	}
+
+	if foundFile == "" {
+		u.ProfilePicUrl = fmt.Sprintf("%s/profiles/default_pic.jpg", host)
+		return nil
+	}
+	u.ProfilePicUrl = fmt.Sprintf("%s/profiles/%s%s", host, u.Id.String(), foundFile)
+	return nil
 }
 
 func (u *User) SetDeafultPic() error {
 	file, err := os.OpenFile("user_data/profile_pictures/default_pic.jpg", os.O_RDONLY, 0666)
-	// мб поменять это, а то хардкод плохо. но мне все равно как то если честно
 	defer file.Close()
 	if err != nil {
 		return err
