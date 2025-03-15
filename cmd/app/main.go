@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 	emailsmtp "github.com/SanyaWarvar/poker/pkg/email_smtp"
 	"github.com/SanyaWarvar/poker/pkg/server"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
@@ -33,7 +35,10 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("Error while create connection to db: %s", err.Error())
 	}
-
+	err = generateStatics(db)
+	if err != nil {
+		logrus.Fatalf("Error while create connection to db: %s", err.Error())
+	}
 	dbNum, err := strconv.Atoi(os.Getenv("REDIS_DB"))
 	if err != nil {
 		logrus.Fatalf("Error while create connection to db: %s", err.Error())
@@ -74,7 +79,6 @@ func main() {
 	jwtCfg := auth.NewJwtManagerCfg(accessTokenTTL, refreshTokenTTL, os.Getenv("SIGNINGKEY"), jwt.SigningMethodHS256)
 
 	repos := server.NewRepository(db, cacheDb, emailCfg, jwtCfg)
-
 	services := server.NewService(repos)
 	srv := server.NewServer(services)
 
@@ -84,4 +88,31 @@ func main() {
 	}
 
 	srv.Run(port)
+}
+
+type StaticFile struct {
+	Filename     string `db:"filename"`
+	FileAsString string `db:"file"`
+	File         []byte
+}
+
+func generateStatics(db *sqlx.DB) error {
+	var files []StaticFile
+
+	query := `
+		SELECT (id::varchar||pic_ext) as filename, profile_picture as file FROM users
+	`
+	err := db.Select(&files, query)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Необходимо создать %d файлов\n", len(files))
+	for ind, item := range files {
+		files[ind].File, err = base64.RawStdEncoding.DecodeString(item.FileAsString)
+		if err != nil {
+			continue
+		}
+		os.WriteFile("user_data/profile_pictures/"+files[ind].Filename, files[ind].File, 0755)
+	}
+	return nil
 }

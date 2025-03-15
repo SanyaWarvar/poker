@@ -81,7 +81,7 @@ type EmailAndPasswordInput struct {
 // @Accept json
 // @Produce json
 // @Param body body EmailAndPasswordInput true "Данные пользователя"
-// @Success 201 {object} map[string]string "Успешный ответ"
+// @Success 201 {object} user.user "Успешный ответ"
 // @Header 201 {string} SetCookie1 "access_token secure=true http_only=true"
 // @Header 201 {string} SetCookie2 "refresh_token secure=true http_only=true"
 // @Failure 400 {object} ErrorResponseStruct "Invalid json"
@@ -100,10 +100,8 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 	if err != nil {
 		return ErrorResponse(c, http.StatusUnauthorized, "Invalid email or password")
 	}
-
-	isEmailConfirmed, _ := s.services.EmailSmtpService.CheckEmailConfirm(user.Email)
-
-	if !isEmailConfirmed {
+	user.GenerateUrl(c.Hostname())
+	if !user.IsEmailConfirmed {
 		return ErrorResponse(c, http.StatusForbidden, "Email not confirmed")
 	}
 
@@ -133,9 +131,7 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 		SameSite: "None",
 	})
 	c.Status(http.StatusCreated)
-	return c.JSON(map[string]interface{}{
-		"details": "Sign in successful",
-	})
+	return c.JSON(user)
 }
 
 // RefreshToken
@@ -432,7 +428,7 @@ func (s *Server) UpdateProfilePic(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusBadRequest, "bad file format")
 	}
 	user, err := s.services.UserService.GetUserById(userId)
-	err = s.services.UserService.UpdateProfilePic(userId, fileBytes, user.Username)
+	err = s.services.UserService.UpdateProfilePic(userId, fileBytes, user.Id.String(), suffix)
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, err.Error())
 	}

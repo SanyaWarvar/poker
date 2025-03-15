@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -20,7 +22,7 @@ type IUserRepo interface {
 	GetUserByE(email string) (User, error)
 	HashPassword(password string) (string, error)
 	ComparePassword(password, hashedPassword string) bool
-	UpdateProfilePic(userId uuid.UUID, encodedPicture string) error
+	UpdateProfilePic(userId uuid.UUID, encodedPicture string, ext string) error
 	UpdateUsername(userId uuid.UUID, username string) error
 	GetUserByUsername(username string) (User, error)
 	SaveProfilePic(userId uuid.UUID, picture []byte, filename string) error
@@ -86,16 +88,16 @@ func (r *UserPostgres) ComparePassword(password, hashedPassword string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)) == nil
 }
 
-func (r *UserPostgres) UpdateProfilePic(userId uuid.UUID, encodedPicture string) error {
+func (r *UserPostgres) UpdateProfilePic(userId uuid.UUID, encodedPicture string, ext string) error {
 	query := fmt.Sprintf(
 		`
 		UPDATE users
-		SET profile_picture = $1
-		WHERE id = $2
+		SET profile_picture = $1, pic_ext = $2
+		WHERE id = $3
 		`,
 	)
 
-	_, err := r.db.Exec(query, encodedPicture, userId)
+	_, err := r.db.Exec(query, encodedPicture, ext, userId)
 	return err
 }
 func (r *UserPostgres) UpdateUsername(userId uuid.UUID, username string) error {
@@ -125,6 +127,19 @@ func (r *UserPostgres) GetUserByUsername(username string) (User, error) {
 }
 
 func (r *UserPostgres) SaveProfilePic(userId uuid.UUID, picture []byte, filename string) error {
+	targetName := userId.String()
+	filepath.Walk("./user_data/profile_pictures", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			fileNameWithoutExt := strings.TrimSuffix(info.Name(), filepath.Ext(info.Name()))
+			if fileNameWithoutExt == targetName {
+				os.Remove(path)
+			}
+		}
+		return nil
+	})
 	return os.WriteFile("user_data/profile_pictures/"+filename, picture, 0644)
 }
 
