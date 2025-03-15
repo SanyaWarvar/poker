@@ -115,6 +115,7 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 
 	c.Cookie(&fiber.Cookie{
 		Name:     "access_token",
+		Domain:   "http://localhost:5173",
 		Value:    accessToken,
 		HTTPOnly: true,
 		Secure:   true,
@@ -124,6 +125,7 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 
 	c.Cookie(&fiber.Cookie{
 		Name:     "refresh_token",
+		Domain:   "http://localhost:5173",
 		Value:    refreshToken,
 		HTTPOnly: true,
 		Secure:   true,
@@ -181,6 +183,7 @@ func (s *Server) RefreshToken(c *fiber.Ctx) error {
 
 	c.Cookie(&fiber.Cookie{
 		Name:     "access_token",
+		Domain:   "http://localhost:5173",
 		Value:    newAccessToken,
 		HTTPOnly: true,
 		Secure:   true,
@@ -190,6 +193,7 @@ func (s *Server) RefreshToken(c *fiber.Ctx) error {
 
 	c.Cookie(&fiber.Cookie{
 		Name:     "refresh_token",
+		Domain:   "http://localhost:5173",
 		Value:    newRefreshToken,
 		HTTPOnly: true,
 		Secure:   true,
