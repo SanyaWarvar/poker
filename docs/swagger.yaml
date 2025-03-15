@@ -1,5 +1,15 @@
 basePath: /
 definitions:
+  auth.RefreshInput:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    required:
+    - access_token
+    - refresh_token
+    type: object
   server.ConfirmCodeInput:
     properties:
       code:
@@ -22,6 +32,13 @@ definitions:
     properties:
       message:
         type: string
+    type: object
+  server.SignInOutput:
+    properties:
+      tokens:
+        $ref: '#/definitions/auth.RefreshInput'
+      user:
+        $ref: '#/definitions/user.User'
     type: object
   server.UserInput:
     properties:
@@ -64,7 +81,7 @@ definitions:
     - email
     - username
     type: object
-host: localhost:80
+host: https://poker-tt7i.onrender.com
 info:
   contact:
     email: fiber@swagger.io
@@ -77,29 +94,6 @@ info:
   title: Card House API
   version: "1.0"
 paths:
-  /auth/check_auth:
-    post:
-      consumes:
-      - application/json
-      description: Проверка содержится ли в куках валидный токен доступа
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Успешный ответ
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: bad access token
-          schema:
-            $ref: '#/definitions/server.ErrorResponseStruct'
-      security:
-      - ApiAuth: []
-      summary: Проверка валидности токенов
-      tags:
-      - auth
   /auth/confirm_email:
     post:
       consumes:
@@ -132,37 +126,23 @@ paths:
       summary: Подтвердить почту
       tags:
       - auth
-  /auth/logout:
-    post:
-      description: Очищает все куки (токены)
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Успешный ответ
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Выйти из аккаунта
-      tags:
-      - auth
   /auth/refresh_token:
     post:
       description: Обновляет хедеры с авторизационными токенами
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RefreshInput'
       produces:
       - application/json
       responses:
         "201":
           description: Успешный ответ
-          headers:
-            SetCookie:
-              description: refresh_token secure=true http_only=true
-              type: string
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/auth.RefreshInput'
         "400":
           description: Bad access token
           schema:
@@ -223,17 +203,8 @@ paths:
       responses:
         "201":
           description: Успешный ответ
-          headers:
-            SetCookie1:
-              description: access_token secure=true http_only=true
-              type: string
-            SetCookie2:
-              description: refresh_token secure=true http_only=true
-              type: string
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/server.SignInOutput'
         "400":
           description: Invalid json
           schema:
