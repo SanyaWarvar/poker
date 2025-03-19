@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"time"
@@ -97,17 +98,29 @@ type StaticFile struct {
 }
 
 func generateStatics(db *sqlx.DB) error {
+	pic, err := os.Open("./user_data/profile_pictures/default_pic.jpg")
+	if err != nil {
+		return err
+	}
+	defaultPic, err := io.ReadAll(pic)
+	if err != nil {
+		return err
+	}
+	defaultBase64 := base64.RawStdEncoding.EncodeToString(defaultPic)
 	var files []StaticFile
 
 	query := `
 		SELECT (id::varchar||pic_ext) as filename, profile_picture as file FROM users
 	`
-	err := db.Select(&files, query)
+	err = db.Select(&files, query)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Необходимо создать %d файлов\n", len(files))
 	for ind, item := range files {
+		if item.FileAsString == defaultBase64 {
+			continue
+		}
 		files[ind].File, err = base64.RawStdEncoding.DecodeString(item.FileAsString)
 		if err != nil {
 			continue

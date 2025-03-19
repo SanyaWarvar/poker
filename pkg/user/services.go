@@ -80,7 +80,7 @@ func (s *UserService) HashPassword(password string) (string, error) {
 
 func (s *UserService) UpdateProfilePic(userId uuid.UUID, picture []byte, filename, ext string) error {
 	encodedPicture := base64.RawStdEncoding.EncodeToString(picture)
-	err := s.repo.SaveProfilePic(userId, picture, filename)
+	err := s.repo.SaveProfilePic(userId, picture, filename+ext)
 	if err != nil {
 		return nil
 	}
