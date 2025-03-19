@@ -22,7 +22,7 @@ type IUserRepo interface {
 	GetUserByE(email string) (User, error)
 	HashPassword(password string) (string, error)
 	ComparePassword(password, hashedPassword string) bool
-	UpdateProfilePic(userId uuid.UUID, encodedPicture string, ext string) error
+	UpdateProfilePic(userId uuid.UUID, encodedPicture, ext string) error
 	UpdateUsername(userId uuid.UUID, username string) error
 	GetUserByUsername(username string) (User, error)
 	SaveProfilePic(userId uuid.UUID, picture []byte, filename string) error
@@ -88,7 +88,7 @@ func (r *UserPostgres) ComparePassword(password, hashedPassword string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)) == nil
 }
 
-func (r *UserPostgres) UpdateProfilePic(userId uuid.UUID, encodedPicture string, ext string) error {
+func (r *UserPostgres) UpdateProfilePic(userId uuid.UUID, encodedPicture, ext string) error {
 	query := fmt.Sprintf(
 		`
 		UPDATE users
