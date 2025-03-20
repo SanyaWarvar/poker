@@ -105,10 +105,10 @@ func (s *UserService) GetDaily(userId uuid.UUID) (DailyReward, error) {
 	if err != nil && !errors.Is(err, redis.Nil) {
 		return output, err
 	}
-	fmt.Println(lastTime, time.Now().After(lastTime.Add(time.Hour*24)))
-	if !time.Now().After(lastTime.Add(time.Hour * 24)) {
+	fmt.Println(lastTime, time.Now().After(lastTime.Add(time.Second*24)))
+	if !time.Now().After(lastTime.Add(time.Second * 24)) {
 		return output, errors.New(
-			fmt.Sprintf("next possible daily reward will available at %s", lastTime.Add(time.Hour*24).Format(time.UnixDate)),
+			fmt.Sprintf("next possible daily reward will available at %s", lastTime.Add(time.Second*24).Format(time.UnixDate)),
 		)
 	}
 	output = SpinWheel()
