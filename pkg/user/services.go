@@ -108,7 +108,7 @@ func (s *UserService) GetDaily(userId uuid.UUID) (DailyReward, error) {
 	fmt.Println(lastTime, time.Now().After(lastTime.Add(time.Hour*24)))
 	if !time.Now().After(lastTime.Add(time.Hour * 24)) {
 		return output, errors.New(
-			fmt.Sprintf("next possible daily reward will available at %s", lastTime.Add(time.Hour*24).Format(time.UnixDate)),
+			fmt.Sprintf("next possible daily reward will available at %s", lastTime.Add(time.Second*24).Format(time.UnixDate)),
 		)
 	}
 	output = SpinWheel()
