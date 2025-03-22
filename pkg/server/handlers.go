@@ -116,7 +116,6 @@ func (s *Server) SignIn(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusInternalServerError, "Failed to generate tokens")
 	}
 
-
 	return c.Status(http.StatusCreated).JSON(SignInOutput{
 		Tokens: auth.RefreshInput{AccessToken: accessToken, RefreshToken: refreshToken},
 		User:   user,
@@ -207,7 +206,7 @@ type ConfirmCodeInput struct {
 // @Param body body ConfirmCodeInput true "Данные пользователя"
 // @Success 201 {object} map[string]string "Успешный ответ"
 // @Failure 400 {object} ErrorResponseStruct "invalid json"
-// @Failure 400 {object} ErrorResponseStruct "email already confirmed"
+// @Failure 400 {object} ErrorResponseStruct "already confirmed"
 // @Failure 400 {object} ErrorResponseStruct "Invalid confirmation code"
 // @Failure 500 {object} ErrorResponseStruct "Failed to confirm code"
 // @Router /auth/confirm_email [post]
@@ -219,10 +218,13 @@ func (s *Server) ConfirmCode(c *fiber.Ctx) error {
 	}
 
 	if err := s.services.EmailSmtpService.ConfirmEmail(input.Email, input.Code); err != nil {
+		fmt.Println(err.Error())
 		if err.Error() == "Bad code" {
 			return ErrorResponse(c, http.StatusBadRequest, "Invalid confirmation code")
+		} else if err.Error() == "already confirmed" {
+			return ErrorResponse(c, http.StatusBadRequest, "already confirmed")
 		}
-		return ErrorResponse(c, http.StatusInternalServerError, "Failed to confirm code")
+		return ErrorResponse(c, http.StatusBadRequest, "Failed to confirm code")
 	}
 	c.Status(http.StatusCreated)
 	return c.JSON(map[string]interface{}{
