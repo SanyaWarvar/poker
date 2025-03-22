@@ -1,6 +1,7 @@
 package emailsmtp
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -47,8 +48,12 @@ func NewEmailSmtpPostgres(db *sqlx.DB, cfg *EmailCfg) *EmailSmtpPostgres {
 }
 
 func (r *EmailSmtpPostgres) ConfirmEmail(email string) error {
-	query := fmt.Sprintf(`UPDATE users SET confirmed_email=true WHERE email = $1`)
-	_, err := r.db.Exec(query, email)
+	query := fmt.Sprintf(`UPDATE users SET confirmed_email='t' WHERE email = $1 AND confirmed_email='f'`)
+	res, err := r.db.Exec(query, email)
+	n, _ := res.RowsAffected()
+	if n == 0 && err == nil {
+		return errors.New("already confirmed")
+	}
 	return err
 }
 
