@@ -29,7 +29,7 @@ type IJwtManagerRepo interface {
 	SaveRefreshToken(hashedToken string, tokenId, userId uuid.UUID) error
 	DeleteRefreshTokenById(tokenId uuid.UUID) error
 	GetRefreshTokenById(tokenId uuid.UUID) (string, error)
-	ParseToken(accessToken string) (*AccessTokenClaims, error)
+	ParseToken(accessToken string, expCheck bool) (*AccessTokenClaims, error)
 	CheckRefreshTokenExp(tokenId uuid.UUID) bool
 	GetTokensTtl() (time.Duration, time.Duration)
 }
@@ -114,21 +114,29 @@ func (m *JwtManagerPostgres) HashToken(token string) (string, error) {
 	return string(hashedToken), err
 }
 
-func (m *JwtManagerPostgres) ParseToken(accessToken string) (*AccessTokenClaims, error) {
+func (m *JwtManagerPostgres) ParseToken(accessToken string, expCheck bool) (*AccessTokenClaims, error) {
+	var opts []jwt.ParserOption
+
+	if !expCheck {
+		opts = append(opts, jwt.WithoutClaimsValidation())
+	}
 	parsedToken, err := jwt.ParseWithClaims(accessToken, &AccessTokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid signing method")
 		}
 
 		return []byte(m.config.SigningKey), nil
-	})
+	}, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	claims, _ := parsedToken.Claims.(*AccessTokenClaims)
+	claims, ok := parsedToken.Claims.(*AccessTokenClaims)
+	if !ok {
+		return nil, errors.New("invalid token claims")
+	}
 
-	return claims, err
+	return claims, nil
 }
 
 func (m *JwtManagerPostgres) DeleteRefreshTokenById(tokenId uuid.UUID) error {

@@ -12,7 +12,7 @@ type IJwtManagerService interface {
 	SaveRefreshToken(hashedToken string, userId, tokenId uuid.UUID) error
 	DeleteRefreshTokenById(tokenId uuid.UUID) error
 	GetRefreshTokenById(tokenId uuid.UUID) (string, error)
-	ParseToken(accessToken string) (*AccessTokenClaims, error)
+	ParseToken(accessToken string, expCheck bool) (*AccessTokenClaims, error)
 	CheckRefreshTokenExp(tokenId uuid.UUID) bool
 	GetTokensTtl() (time.Duration, time.Duration)
 }
@@ -25,8 +25,8 @@ func NewJwtManagerService(repo IJwtManagerRepo) *JwtManagerService {
 	return &JwtManagerService{repo: repo}
 }
 
-func (s *JwtManagerService) ParseToken(accessToken string) (*AccessTokenClaims, error) {
-	return s.repo.ParseToken(accessToken)
+func (s *JwtManagerService) ParseToken(accessToken string, expCheck bool) (*AccessTokenClaims, error) {
+	return s.repo.ParseToken(accessToken, expCheck)
 }
 
 func (s *JwtManagerService) GeneratePairToken(userId uuid.UUID) (string, string, uuid.UUID, error) {
