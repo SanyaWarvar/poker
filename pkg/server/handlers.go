@@ -12,6 +12,7 @@ import (
 	"github.com/SanyaWarvar/poker/pkg/auth"
 	"github.com/SanyaWarvar/poker/pkg/user"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
@@ -143,9 +144,9 @@ func (s *Server) RefreshToken(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusBadRequest, "no access or refresh token")
 	}
 
-	accessToken, err := s.services.JwtService.ParseToken(input.AccessToken)
-
-	if err != nil {
+	accessToken, err := s.services.JwtService.ParseToken(input.AccessToken, false)
+	fmt.Println(err)
+	if err != nil && err != jwt.ErrTokenExpired {
 		return ErrorResponse(c, http.StatusBadRequest, "bad access token")
 	}
 
@@ -238,7 +239,7 @@ func (s *Server) CheckAuthMiddleware(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusBadRequest, "Access token missing")
 	}
 
-	token, err := s.services.JwtService.ParseToken(accessToken)
+	token, err := s.services.JwtService.ParseToken(accessToken, true)
 
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, "bad access token")
