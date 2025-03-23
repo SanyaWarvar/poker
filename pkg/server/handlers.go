@@ -236,13 +236,13 @@ func (s *Server) ConfirmCode(c *fiber.Ctx) error {
 func (s *Server) CheckAuthMiddleware(c *fiber.Ctx) error {
 	accessToken := strings.Split(c.Get("Authorization"), " ")[1]
 	if accessToken == "" {
-		return ErrorResponse(c, http.StatusBadRequest, "Access token missing")
+		return ErrorResponse(c,401, "Access token missing")
 	}
 
 	token, err := s.services.JwtService.ParseToken(accessToken, true)
 
 	if err != nil {
-		return ErrorResponse(c, http.StatusBadRequest, "bad access token")
+		return ErrorResponse(c, 401, "bad access token")
 	}
 	c.Locals("userId", token.UserId)
 	return c.Next()
