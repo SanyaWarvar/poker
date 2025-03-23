@@ -17,7 +17,7 @@ type IUserService interface {
 	HashPassword(password string) (string, error)
 	GetUserById(userId uuid.UUID) (User, error)
 	GetUserByUsername(username string) (User, error)
-	UpdateProfilePic(userId uuid.UUID, picture []byte, filename, ext string) error
+	UpdateProfilePic(userId uuid.UUID, picture []byte, filepath string) error
 	UpdateUsername(userId uuid.UUID, username string) error // будем обновлять именно эту инфу.
 	GetDaily(userId uuid.UUID) (DailyReward, error)
 	ChangeBalance(userId uuid.UUID, delta int) error //TODO
@@ -42,10 +42,7 @@ func (s *UserService) CreateUser(user User) error {
 	if err != nil {
 		return err
 	}
-	err = user.SetDeafultPic()
-	if err != nil {
-		return err
-	}
+	user.ProfilePic = "./user_data/profile_pictures/default_pic.jpg"
 	return s.repo.CreateUser(user)
 }
 
@@ -78,13 +75,13 @@ func (s *UserService) HashPassword(password string) (string, error) {
 	return s.repo.HashPassword(password)
 }
 
-func (s *UserService) UpdateProfilePic(userId uuid.UUID, picture []byte, filename, ext string) error {
+func (s *UserService) UpdateProfilePic(userId uuid.UUID, picture []byte, filepath string) error {
 	encodedPicture := base64.RawStdEncoding.EncodeToString(picture)
-	err := s.repo.SaveProfilePic(userId, picture, filename+ext)
+	err := s.repo.SaveProfilePic(userId, picture, filepath)
 	if err != nil {
 		return nil
 	}
-	return s.repo.UpdateProfilePic(userId, encodedPicture, ext)
+	return s.repo.UpdateProfilePic(userId, encodedPicture, filepath)
 }
 
 func (s *UserService) GetUserById(userId uuid.UUID) (User, error) {

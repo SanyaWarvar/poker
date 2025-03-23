@@ -92,8 +92,8 @@ func main() {
 }
 
 type StaticFile struct {
-	Filename     string `db:"filename"`
-	FileAsString string `db:"file"`
+	Filename     string `db:"file_path"`
+	FileAsString string `db:"file_data"`
 	File         []byte
 }
 
@@ -110,7 +110,7 @@ func generateStatics(db *sqlx.DB) error {
 	var files []StaticFile
 
 	query := `
-		SELECT (id::varchar||pic_ext) as filename, profile_picture as file FROM users
+		SELECT file_data, file_path FROM files
 	`
 	err = db.Select(&files, query)
 	if err != nil {
@@ -125,7 +125,8 @@ func generateStatics(db *sqlx.DB) error {
 		if err != nil {
 			continue
 		}
-		os.WriteFile("user_data/profile_pictures/"+files[ind].Filename, files[ind].File, 0755)
+
+		os.WriteFile(files[ind].Filename, files[ind].File, 0755)
 	}
 	return nil
 }

@@ -351,7 +351,7 @@ func (s *Server) UpdateProfilePic(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusBadRequest, "bad file format")
 	}
 	user, err := s.services.UserService.GetUserById(userId)
-	err = s.services.UserService.UpdateProfilePic(userId, fileBytes, user.Id.String(), suffix)
+	err = s.services.UserService.UpdateProfilePic(userId, fileBytes, user.Id.String()+suffix)
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, err.Error())
 	}

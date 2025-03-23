@@ -22,7 +22,7 @@ type IUserRepo interface {
 	GetUserByE(email string) (User, error)
 	HashPassword(password string) (string, error)
 	ComparePassword(password, hashedPassword string) bool
-	UpdateProfilePic(userId uuid.UUID, encodedPicture, ext string) error
+	UpdateProfilePic(userId uuid.UUID, encodedPicture, filepath string) error
 	UpdateUsername(userId uuid.UUID, username string) error
 	GetUserByUsername(username string) (User, error)
 	SaveProfilePic(userId uuid.UUID, picture []byte, filename string) error
@@ -88,16 +88,36 @@ func (r *UserPostgres) ComparePassword(password, hashedPassword string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)) == nil
 }
 
-func (r *UserPostgres) UpdateProfilePic(userId uuid.UUID, encodedPicture, ext string) error {
-	query := fmt.Sprintf(
+func (r *UserPostgres) UpdateProfilePic(userId uuid.UUID, encodedPicture, filepath string) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	query1 := fmt.Sprintf(
 		`
 		UPDATE users
-		SET profile_picture = $1, pic_ext = $2
-		WHERE id = $3
+		SET profile_picture = $1
+		WHERE id = $2
+		`,
+	)
+	_, err = tx.Exec(query1, filepath, userId.String())
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	query2 := fmt.Sprintf(
+		`
+		INSERT INTO files VALUES
+		($1, $2)
 		`,
 	)
 
-	_, err := r.db.Exec(query, encodedPicture, ext, userId)
+	_, err = tx.Exec(query2, encodedPicture, filepath)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	err = tx.Commit()
 	return err
 }
 func (r *UserPostgres) UpdateUsername(userId uuid.UUID, username string) error {
