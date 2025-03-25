@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"path/filepath"
 	"slices"
+	"time"
 
 	"strings"
 
 	"github.com/SanyaWarvar/poker/pkg/auth"
+	"github.com/SanyaWarvar/poker/pkg/holdem"
 	"github.com/SanyaWarvar/poker/pkg/user"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -379,4 +381,112 @@ func (s *Server) DailyReward(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusBadRequest, err.Error())
 	}
 	return c.Status(http.StatusOK).JSON(reward)
+}
+
+// GetMyLobby
+// @Summary Получить id лобби в котором находишься
+// @Description Получить id лобби в котором находишься
+// @Security ApiAuth
+// @Tags lobby
+// @Produce json
+// @Success 200 {object} holdem.TableConfig "Успех"
+// @Failure 400 {object} map[string]string "точно не знаю что тут может выпасть. наверное что то в духе lobby not found"
+// @Failure 401 {object} map[string]string "bad user id"
+// @Router /lobby/ [get]
+func (s *Server) GetMyLobby(c *fiber.Ctx) error {
+	userIdInterface := c.Locals("userId")
+	userId, ok := userIdInterface.(uuid.UUID)
+	if !ok {
+		return ErrorResponse(c, http.StatusUnauthorized, "bad user id")
+	}
+	lobby, err := s.services.HoldemService.GetLobbyByPId(userId)
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, err.Error()) //TODO подумать хорошенько
+	}
+	return c.Status(http.StatusOK).JSON(lobby)
+}
+
+// PageInput
+// @Schema
+type PageInput struct {
+	Page int `json:"page" binding:"reqired" example:"0"`
+}
+
+// GetAllLobbies
+// @Summary Получить все лобби
+// @Description Получить все лобби. Размер пагинации - 50
+// @Security ApiAuth
+// @Tags lobby
+// @Produce json
+// @Param body body PageInput true "номер страницы для пагинации"
+// @Success 200 {object} []holdem.TableConfig "Успех"
+// @Failure 401 {object} map[string]string "bad user id"
+// @Router /lobby/all [get]
+func (s *Server) GetAllLobbies(c *fiber.Ctx) error {
+	var input PageInput
+	err := c.BodyParser(&input)
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+	lobbies := s.services.HoldemService.GetLobbyList(input.Page)
+	return c.Status(http.StatusOK).JSON(lobbies)
+}
+
+// TableConfigInput
+// @Schema
+type TableConfigInput struct {
+	BlindIncreaseTime string `json:"blind_increase_time" binding:"reqired" example:"15m"`
+	MaxPlayers        int    `json:"max_players" binding:"reqired" example:"7"`
+	EnterAfterStart   bool   `json:"cache_game" binding:"reqired" example:"true"` //true = cache game. false = sit n go
+	SmallBlind        int    `json:"small_blind" binding:"reqired" example:"100"`
+	Ante              int    `json:"ante" example:"25"`
+}
+
+// CreateLobby
+// @Summary Создать лобби
+// @Description Создаить лобби. Автоматически добавить создателя в список игроков
+// @Security ApiAuth
+// @Tags lobby
+// @Produce json
+// @Param body body TableConfigInput true "Данные для лобби"
+// @Success 201 {object} string "id лобби"
+// @Failure 400 {object} map[string]string "точно не знаю что тут может выпасть"
+// @Failure 401 {object} map[string]string "bad user id"
+// @Router /lobby/ [post]
+func (s *Server) CreateLobby(c *fiber.Ctx) error {
+	var input TableConfigInput
+	err := c.BodyParser(&input)
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+	minPlayers := 2
+	if !input.EnterAfterStart {
+		minPlayers = input.MaxPlayers
+	}
+	userIdInterface := c.Locals("userId")
+	userId, ok := userIdInterface.(uuid.UUID)
+	if !ok {
+		return ErrorResponse(c, http.StatusUnauthorized, "bad user id")
+	}
+	blindsIncreaseTime, err := time.ParseDuration(input.BlindIncreaseTime)
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, "bad user id")
+	}
+	cfg := holdem.NewTableConfig(blindsIncreaseTime, input.MaxPlayers, minPlayers, input.SmallBlind, input.Ante, input.EnterAfterStart, 0)
+	lobbyId, err := s.services.HoldemService.CreateLobby(cfg, userId)
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+
+	err = s.services.HoldemService.EnterInLobby(lobbyId, userId)
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
+	return c.Status(http.StatusCreated).JSON(map[string]string{"lobby_id": lobbyId.String()})
+}
+
+// LobbyIdInput
+// @Schema
+type LobbyIdInput struct {
+	LobbyId uuid.UUID `json:"lobby_id" binding:"required" example:"2854a298-61f5-468b-baa5-df4c273f2d06"`
 }
