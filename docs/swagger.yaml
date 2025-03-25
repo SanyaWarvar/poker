@@ -10,6 +10,26 @@ definitions:
     - access_token
     - refresh_token
     type: object
+  holdem.TableConfig:
+    properties:
+      ante:
+        type: integer
+      blind_increase_time:
+        $ref: '#/definitions/time.Duration'
+      cache_game:
+        description: true = cache game. false = sit n go
+        type: boolean
+      last_blind_increase_time:
+        type: string
+      lobby_id:
+        type: string
+      max_players:
+        type: integer
+      min_players_to_start:
+        type: integer
+      small_blind:
+        type: integer
+    type: object
   server.ConfirmCodeInput:
     properties:
       code:
@@ -33,12 +53,37 @@ definitions:
       message:
         type: string
     type: object
+  server.PageInput:
+    properties:
+      page:
+        example: 0
+        type: integer
+    type: object
   server.SignInOutput:
     properties:
       tokens:
         $ref: '#/definitions/auth.RefreshInput'
       user:
         $ref: '#/definitions/user.User'
+    type: object
+  server.TableConfigInput:
+    properties:
+      ante:
+        example: 25
+        type: integer
+      blind_increase_time:
+        example: 15m
+        type: string
+      cache_game:
+        description: true = cache game. false = sit n go
+        example: true
+        type: boolean
+      max_players:
+        example: 7
+        type: integer
+      small_blind:
+        example: 100
+        type: integer
     type: object
   server.UserInput:
     properties:
@@ -58,6 +103,26 @@ definitions:
         example: john doe
         type: string
     type: object
+  time.Duration:
+    enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    type: integer
+    x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
   user.DailyReward:
     properties:
       amount:
@@ -256,6 +321,97 @@ paths:
       summary: Регистрирация
       tags:
       - auth
+  /lobby/:
+    get:
+      description: Получить id лобби в котором находишься
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успех
+          schema:
+            $ref: '#/definitions/holdem.TableConfig'
+        "400":
+          description: точно не знаю что тут может выпасть. наверное что то в духе
+            lobby not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: bad user id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Получить id лобби в котором находишься
+      tags:
+      - lobby
+    post:
+      description: Создаить лобби. Автоматически добавить создателя в список игроков
+      parameters:
+      - description: Данные для лобби
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/server.TableConfigInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: id лобби
+          schema:
+            type: string
+        "400":
+          description: точно не знаю что тут может выпасть
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: bad user id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Создать лобби
+      tags:
+      - lobby
+  /lobby/all:
+    get:
+      description: Получить все лобби. Размер пагинации - 50
+      parameters:
+      - description: номер страницы для пагинации
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/server.PageInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успех
+          schema:
+            items:
+              $ref: '#/definitions/holdem.TableConfig'
+            type: array
+        "401":
+          description: bad user id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Получить все лобби
+      tags:
+      - lobby
   /user/:
     put:
       consumes:

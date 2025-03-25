@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/SanyaWarvar/poker/pkg/auth"
 	emailsmtp "github.com/SanyaWarvar/poker/pkg/email_smtp"
+	"github.com/SanyaWarvar/poker/pkg/game"
 	"github.com/SanyaWarvar/poker/pkg/user"
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
@@ -14,6 +15,7 @@ type Repository struct {
 	UserCacheRepo      user.IUserCacheRepo
 	EmailSmtpRepo      emailsmtp.IEmailSmtpRepo
 	EmailSmtpCacheRepo emailsmtp.IEmailCacheRepo
+	HoldemRepo         game.IHoldemRepo
 }
 
 func NewRepository(
@@ -29,5 +31,6 @@ func NewRepository(
 		UserCacheRepo:      user.NewUserCacheRepo(cacheDb),
 		EmailSmtpRepo:      emailsmtp.NewEmailSmtpPostgres(db, emailCfg),
 		EmailSmtpCacheRepo: emailsmtp.NewEmailCacheRepo(cacheDb, emailCfg.CodeExp),
+		HoldemRepo:         game.NewHoldemRepo(),
 	}
 }

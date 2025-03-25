@@ -265,6 +265,149 @@
                 }
             }
         },
+        "/lobby/": {
+            "get": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Получить id лобби в котором находишься",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lobby"
+                ],
+                "summary": "Получить id лобби в котором находишься",
+                "responses": {
+                    "200": {
+                        "description": "Успех",
+                        "schema": {
+                            "$ref": "#/definitions/holdem.TableConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "точно не знаю что тут может выпасть. наверное что то в духе lobby not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "bad user id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Создаить лобби. Автоматически добавить создателя в список игроков",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lobby"
+                ],
+                "summary": "Создать лобби",
+                "parameters": [
+                    {
+                        "description": "Данные для лобби",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.TableConfigInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "id лобби",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "точно не знаю что тут может выпасть",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "bad user id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/lobby/all": {
+            "get": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Получить все лобби. Размер пагинации - 50",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lobby"
+                ],
+                "summary": "Получить все лобби",
+                "parameters": [
+                    {
+                        "description": "номер страницы для пагинации",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.PageInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успех",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/holdem.TableConfig"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "bad user id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/user/": {
             "put": {
                 "security": [
@@ -507,6 +650,36 @@
                 }
             }
         },
+        "holdem.TableConfig": {
+            "type": "object",
+            "properties": {
+                "ante": {
+                    "type": "integer"
+                },
+                "blind_increase_time": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "cache_game": {
+                    "description": "true = cache game. false = sit n go",
+                    "type": "boolean"
+                },
+                "last_blind_increase_time": {
+                    "type": "string"
+                },
+                "lobby_id": {
+                    "type": "string"
+                },
+                "max_players": {
+                    "type": "integer"
+                },
+                "min_players_to_start": {
+                    "type": "integer"
+                },
+                "small_blind": {
+                    "type": "integer"
+                }
+            }
+        },
         "server.ConfirmCodeInput": {
             "type": "object",
             "properties": {
@@ -541,6 +714,15 @@
                 }
             }
         },
+        "server.PageInput": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "example": 0
+                }
+            }
+        },
         "server.SignInOutput": {
             "type": "object",
             "properties": {
@@ -549,6 +731,32 @@
                 },
                 "user": {
                     "$ref": "#/definitions/user.User"
+                }
+            }
+        },
+        "server.TableConfigInput": {
+            "type": "object",
+            "properties": {
+                "ante": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "blind_increase_time": {
+                    "type": "string",
+                    "example": "15m"
+                },
+                "cache_game": {
+                    "description": "true = cache game. false = sit n go",
+                    "type": "boolean",
+                    "example": true
+                },
+                "max_players": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "small_blind": {
+                    "type": "integer",
+                    "example": 100
                 }
             }
         },
@@ -577,6 +785,29 @@
                     "example": "john doe"
                 }
             }
+        },
+        "time.Duration": {
+            "type": "integer",
+            "enum": [
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000
+            ],
+            "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour"
+            ]
         },
         "user.DailyReward": {
             "type": "object",
