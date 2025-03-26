@@ -26,8 +26,8 @@ var sectors = []int{
 // DailyReward
 // @Schema
 type DailyReward struct {
-	Amount     int `json:"amount" example:"1000"`
-	AngleDelta int `json:"angle_delta" example:"27"`
+	Amount      int `json:"amount" example:"1000"`
+	SectorIndex int `json:"sector" example:"1"`
 }
 
 func SpinWheel() DailyReward {
@@ -35,5 +35,5 @@ func SpinWheel() DailyReward {
 	sectorAngle := 360 / len(sectors)
 	skipSectors := angle / sectorAngle
 	targetSector := (0 + skipSectors) % len(sectors)
-	return DailyReward{Amount: sectors[targetSector], AngleDelta: angle}
+	return DailyReward{Amount: sectors[targetSector], SectorIndex: targetSector}
 }
