@@ -1,6 +1,8 @@
 package game
 
 import (
+	"fmt"
+
 	"github.com/SanyaWarvar/poker/pkg/holdem"
 	"github.com/google/uuid"
 )
@@ -29,15 +31,16 @@ func (s *HoldemService) CreateLobby(cfg *holdem.TableConfig, playerId uuid.UUID)
 	var lobbyId uuid.UUID
 	for {
 		lobbyId = uuid.New()
+		cfg.TableId = lobbyId
 		err := s.repo.CreateLobby(cfg, lobbyId)
 		if err == ErrDuplicateLobbyId {
 			continue
 		}
-		break
+		fmt.Println(lobbyId)
+		return lobbyId, nil
 	}
-	return lobbyId, nil
-
 }
+
 func (s *HoldemService) GetLobbyList(page int) []holdem.TableConfig {
 	return s.repo.GetLobbyList(page)
 }

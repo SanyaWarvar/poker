@@ -43,9 +43,11 @@ type TableConfig struct {
 	LastBlindIncrease time.Time     `json:"last_blind_increase_time"`
 	MaxPlayers        int           `json:"max_players"`
 	MinPlayers        int           `json:"min_players_to_start"`
+	CurrentPlayers    int           `json:"current_players_count"`
 	EnterAfterStart   bool          `json:"cache_game"` //true = cache game. false = sit n go
 	SmallBlind        int           `json:"small_blind"`
 	Ante              int           `json:"ante"`
+	BankAmount        int           `json:"bank_amount"`
 	Seed              int64         `json:"-"`
 }
 
@@ -71,16 +73,22 @@ type PokerTable struct {
 	Meta      *TableMeta
 }
 
-func NewTableConfig(BlindIncreaseTime time.Duration, maxPlayers, minPlayers, smallBlind, ante int, enterAfteStart bool, seed int64) *TableConfig {
+func NewTableConfig(
+	BlindIncreaseTime time.Duration,
+	maxPlayers, minPlayers, smallBlind, ante, bankAmount int,
+	enterAfteStart bool,
+	seed int64) *TableConfig {
 	return &TableConfig{
 		BlindIncreaseTime: BlindIncreaseTime,
 		LastBlindIncrease: time.Now(),
 		MaxPlayers:        maxPlayers,
 		MinPlayers:        minPlayers,
+		CurrentPlayers:    0,
 		EnterAfterStart:   enterAfteStart,
 		SmallBlind:        smallBlind,
 		Ante:              ante,
 		Seed:              seed,
+		BankAmount:        bankAmount,
 		TableId:           uuid.New(),
 	}
 }
@@ -139,8 +147,11 @@ func (m *TableMeta) refreshDeck(seed int64) {
 	})
 }
 
-func (m *TableMeta) addPlayerInGame(p IPlayer) {
+func (m *TableMeta) addPlayerInGame(p IPlayer, bankAmount int) {
 	m.Players[p.GetId()] = p
+	if bankAmount != 0 {
+		p.SetBalance(bankAmount)
+	}
 }
 
 //TODO remove player
@@ -171,9 +182,10 @@ func (t *PokerTable) AddPlayer(p IPlayer) error {
 	if t.Meta.GameStarted {
 		t.Meta.addPlayerInQuery(p)
 	} else {
-		t.Meta.addPlayerInGame(p)
+		t.Meta.addPlayerInGame(p, t.Config.BankAmount)
 		t.Meta.PlayersOrder = append(t.Meta.PlayersOrder, p.GetId())
 	}
+	t.Config.CurrentPlayers += 1
 	t.NotifyObservers(fmt.Sprintf("Player %s enter the game", p.GetId()))
 	return nil
 }
@@ -312,6 +324,7 @@ func (t *PokerTable) RemovePlayer(playerId string) error {
 		return nil
 	}
 	delete(t.Meta.Players, playerId)
+	t.Config.CurrentPlayers -= 1
 	ind := slices.Index(t.Meta.PlayersOrder, playerId)
 	t.Meta.PlayersOrder = append(t.Meta.PlayersOrder[:ind], t.Meta.PlayersOrder[ind+1:]...)
 	return nil
