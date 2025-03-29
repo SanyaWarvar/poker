@@ -440,6 +440,7 @@ type TableConfigInput struct {
 	EnterAfterStart   bool   `json:"cache_game" binding:"reqired" example:"true"` //true = cache game. false = sit n go
 	SmallBlind        int    `json:"small_blind" binding:"reqired" example:"100"`
 	Ante              int    `json:"ante" example:"25"`
+	BankAmount        int    `json:"bank_amount"`
 }
 
 // CreateLobby
@@ -472,12 +473,21 @@ func (s *Server) CreateLobby(c *fiber.Ctx) error {
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, "bad user id")
 	}
-	cfg := holdem.NewTableConfig(blindsIncreaseTime, input.MaxPlayers, minPlayers, input.SmallBlind, input.Ante, input.EnterAfterStart, 0)
+	cfg := holdem.NewTableConfig(
+		blindsIncreaseTime,
+		input.MaxPlayers,
+		minPlayers,
+		input.SmallBlind,
+		input.Ante,
+		input.BankAmount,
+		input.EnterAfterStart,
+		0,
+	)
 	lobbyId, err := s.services.HoldemService.CreateLobby(cfg, userId)
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, err.Error())
 	}
-
+	fmt.Println(lobbyId)
 	err = s.services.HoldemService.EnterInLobby(lobbyId, userId)
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, err.Error())

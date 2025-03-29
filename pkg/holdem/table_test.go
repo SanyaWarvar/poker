@@ -11,7 +11,7 @@ import (
 
 func TestTableGame1Good(t *testing.T) {
 	t.Run("game 1", func(t *testing.T) {
-		config := NewTableConfig(time.Hour, 10, 2, 50, 0, false, 1488)
+		config := NewTableConfig(time.Hour, 10, 2, 50, 0, 0, false, 1488)
 		table := NewPokerTable(config)
 		p1 := &Player{Id: uuid.MustParse("00000000-0000-0000-0000-000000000001"), Balance: 1000} //bb
 		p2 := &Player{Id: uuid.MustParse("00000000-0000-0000-0000-000000000002"), Balance: 1000} //dealer
@@ -52,7 +52,7 @@ func TestTableGame1Good(t *testing.T) {
 }
 func TestTableGame2Good(t *testing.T) {
 	t.Run("game 2", func(t *testing.T) {
-		config := NewTableConfig(time.Hour, 10, 2, 50, 0, false, 1488)
+		config := NewTableConfig(time.Hour, 10, 2, 50, 0, 0, false, 1488)
 		table := NewPokerTable(config)
 		p1 := &Player{Id: uuid.MustParse("00000000-0000-0000-0000-000000000001"), Balance: 1000} //bb
 		p2 := &Player{Id: uuid.MustParse("00000000-0000-0000-0000-000000000002"), Balance: 1000} //dealer

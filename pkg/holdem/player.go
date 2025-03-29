@@ -22,6 +22,7 @@ func Abs[T Number](value T) T {
 
 type IPlayer interface {
 	GetBalance() int
+	SetBalance(balance int)
 	ChangeBalance(delta int) error
 	GetId() string
 	GetFold() bool
@@ -57,6 +58,10 @@ func (p *Player) String() string {
 
 func (p *Player) GetBalance() int {
 	return p.Balance
+}
+
+func (p *Player) SetBalance(balance int) {
+	p.Balance = balance
 }
 
 func (p *Player) ChangeBalance(delta int) error {

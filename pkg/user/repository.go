@@ -105,14 +105,26 @@ func (r *UserPostgres) UpdateProfilePic(userId uuid.UUID, encodedPicture, filepa
 		tx.Rollback()
 		return err
 	}
+	fmt.Println(userId)
 	query2 := fmt.Sprintf(
+		`
+		DELETE FROM files WHERE file_path like $1
+		`,
+	)
+	_, err = tx.Exec(query2, userId.String()+"%")
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	query3 := fmt.Sprintf(
 		`
 		INSERT INTO files VALUES
 		($1, $2)
 		`,
 	)
 
-	_, err = tx.Exec(query2, encodedPicture, filepath)
+	_, err = tx.Exec(query3, encodedPicture, filepath)
 	if err != nil {
 		tx.Rollback()
 		return err
