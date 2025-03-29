@@ -77,7 +77,7 @@ func (s *Server) CreateApp() *fiber.App {
 	lobby := app.Group("/lobby", s.CheckAuthMiddleware)
 	{
 		lobby.Get("/", s.GetMyLobby)
-		lobby.Get("/all", s.GetAllLobbies)
+		lobby.Get("/all/:page", s.GetAllLobbies)
 		lobby.Post("/", s.CreateLobby)
 	}
 
