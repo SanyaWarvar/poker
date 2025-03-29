@@ -406,29 +406,23 @@ func (s *Server) GetMyLobby(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(lobby)
 }
 
-// PageInput
-// @Schema
-type PageInput struct {
-	Page int `json:"page" binding:"reqired" example:"0"`
-}
-
 // GetAllLobbies
-// @Summary Получить все лобби
-// @Description Получить все лобби. Размер пагинации - 50
+// @Summary Получить список лобби
+// @Description Получить список лобби с пагинацией (размер страницы - 50)
 // @Security ApiAuth
 // @Tags lobby
 // @Produce json
-// @Param body body PageInput true "номер страницы для пагинации"
-// @Success 200 {object} []holdem.TableConfig "Успех"
-// @Failure 401 {object} map[string]string "bad user id"
-// @Router /lobby/all [get]
+// @Param page query int true "Номер страницы" minimum(1)
+// @Success 200 {object} []holdem.TableConfig "Список лобби"
+// @Failure 400 {object} map[string]string "Неверный параметр страницы"
+// @Failure 401 {object} map[string]string "Не авторизован"
+// @Router /lobby/all/{page} [get]
 func (s *Server) GetAllLobbies(c *fiber.Ctx) error {
-	var input PageInput
-	err := c.BodyParser(&input)
+	page, err := c.ParamsInt("page")
 	if err != nil {
-		return ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return ErrorResponse(c, http.StatusBadRequest, "bad page param")
 	}
-	lobbies := s.services.HoldemService.GetLobbyList(input.Page)
+	lobbies := s.services.HoldemService.GetLobbyList(page)
 	return c.Status(http.StatusOK).JSON(lobbies)
 }
 

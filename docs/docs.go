@@ -366,35 +366,34 @@ const docTemplate = `{
                 }
             }
         },
-        "/lobby/all": {
+        "/lobby/all/{page}": {
             "get": {
                 "security": [
                     {
                         "ApiAuth": []
                     }
                 ],
-                "description": "Получить все лобби. Размер пагинации - 50",
+                "description": "Получить список лобби с пагинацией (размер страницы - 50)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "lobby"
                 ],
-                "summary": "Получить все лобби",
+                "summary": "Получить список лобби",
                 "parameters": [
                     {
-                        "description": "номер страницы для пагинации",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/server.PageInput"
-                        }
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Успех",
+                        "description": "Список лобби",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -402,8 +401,17 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "400": {
+                        "description": "Неверный параметр страницы",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "401": {
-                        "description": "bad user id",
+                        "description": "Не авторизован",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -662,12 +670,18 @@ const docTemplate = `{
                 "ante": {
                     "type": "integer"
                 },
+                "bank_amount": {
+                    "type": "integer"
+                },
                 "blind_increase_time": {
                     "$ref": "#/definitions/time.Duration"
                 },
                 "cache_game": {
                     "description": "true = cache game. false = sit n go",
                     "type": "boolean"
+                },
+                "current_players_count": {
+                    "type": "integer"
                 },
                 "last_blind_increase_time": {
                     "type": "string"
@@ -720,15 +734,6 @@ const docTemplate = `{
                 }
             }
         },
-        "server.PageInput": {
-            "type": "object",
-            "properties": {
-                "page": {
-                    "type": "integer",
-                    "example": 0
-                }
-            }
-        },
         "server.SignInOutput": {
             "type": "object",
             "properties": {
@@ -746,6 +751,9 @@ const docTemplate = `{
                 "ante": {
                     "type": "integer",
                     "example": 25
+                },
+                "bank_amount": {
+                    "type": "integer"
                 },
                 "blind_increase_time": {
                     "type": "string",
@@ -822,9 +830,9 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 1000
                 },
-                "angle_delta": {
+                "sector": {
                     "type": "integer",
-                    "example": 27
+                    "example": 1
                 }
             }
         },

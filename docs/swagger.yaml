@@ -14,11 +14,15 @@ definitions:
     properties:
       ante:
         type: integer
+      bank_amount:
+        type: integer
       blind_increase_time:
         $ref: '#/definitions/time.Duration'
       cache_game:
         description: true = cache game. false = sit n go
         type: boolean
+      current_players_count:
+        type: integer
       last_blind_increase_time:
         type: string
       lobby_id:
@@ -53,12 +57,6 @@ definitions:
       message:
         type: string
     type: object
-  server.PageInput:
-    properties:
-      page:
-        example: 0
-        type: integer
-    type: object
   server.SignInOutput:
     properties:
       tokens:
@@ -70,6 +68,8 @@ definitions:
     properties:
       ante:
         example: 25
+        type: integer
+      bank_amount:
         type: integer
       blind_increase_time:
         example: 15m
@@ -128,8 +128,8 @@ definitions:
       amount:
         example: 1000
         type: integer
-      angle_delta:
-        example: 27
+      sector:
+        example: 1
         type: integer
     type: object
   user.User:
@@ -382,34 +382,40 @@ paths:
       summary: Создать лобби
       tags:
       - lobby
-  /lobby/all:
+  /lobby/all/{page}:
     get:
-      description: Получить все лобби. Размер пагинации - 50
+      description: Получить список лобби с пагинацией (размер страницы - 50)
       parameters:
-      - description: номер страницы для пагинации
-        in: body
-        name: body
+      - description: Номер страницы
+        in: query
+        minimum: 1
+        name: page
         required: true
-        schema:
-          $ref: '#/definitions/server.PageInput'
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: Успех
+          description: Список лобби
           schema:
             items:
               $ref: '#/definitions/holdem.TableConfig'
             type: array
+        "400":
+          description: Неверный параметр страницы
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "401":
-          description: bad user id
+          description: Не авторизован
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - ApiAuth: []
-      summary: Получить все лобби
+      summary: Получить список лобби
       tags:
       - lobby
   /user/:
