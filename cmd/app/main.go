@@ -10,6 +10,7 @@ import (
 
 	"github.com/SanyaWarvar/poker/pkg/auth"
 	emailsmtp "github.com/SanyaWarvar/poker/pkg/email_smtp"
+	"github.com/SanyaWarvar/poker/pkg/handlers"
 	"github.com/SanyaWarvar/poker/pkg/server"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jmoiron/sqlx"
@@ -79,9 +80,10 @@ func main() {
 	}
 	jwtCfg := auth.NewJwtManagerCfg(accessTokenTTL, refreshTokenTTL, os.Getenv("SIGNINGKEY"), jwt.SigningMethodHS256)
 
-	repos := server.NewRepository(db, cacheDb, emailCfg, jwtCfg)
-	services := server.NewService(repos)
-	srv := server.NewServer(services)
+	repos := handlers.NewRepository(db, cacheDb, emailCfg, jwtCfg)
+	services := handlers.NewService(repos)
+	h := handlers.NewHandler(services)
+	srv := server.NewServer(h)
 
 	port := os.Getenv("PORT")
 	if port == "" {

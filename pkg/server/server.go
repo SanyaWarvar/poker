@@ -4,23 +4,25 @@ import (
 	"net/http"
 
 	_ "github.com/SanyaWarvar/poker/docs"
+	"github.com/SanyaWarvar/poker/pkg/handlers"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/websocket/v2"
 	"github.com/sirupsen/logrus"
 	fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
 type Server struct {
-	services Service
+	handler *handlers.Handler
 }
 
-func NewServer(s *Service) *Server {
-	return &Server{services: *s}
+func NewServer(h *handlers.Handler) *Server {
+	return &Server{handler: h}
 }
 
-// @securityDefinitions.apikey ApiAuth
-// @in SetCookie
+// @securityDefinitions.handler.apikey ApiAuth
+// @in Authorization
 // @name access_token
 
 // @title Card House API
@@ -59,26 +61,29 @@ func (s *Server) CreateApp() *fiber.App {
 
 	auth := app.Group("/auth")
 	{
-		auth.Post("/sign_up", s.SignUp)
-		auth.Post("/send_code", s.SendCode)
-		auth.Post("/confirm_email", s.ConfirmCode)
-		auth.Post("/sign_in", s.SignIn)
-		auth.Post("/refresh_token", s.RefreshToken)
+		auth.Post("/sign_up", s.handler.SignUp)
+		auth.Post("/send_code", s.handler.SendCode)
+		auth.Post("/confirm_email", s.handler.ConfirmCode)
+		auth.Post("/sign_in", s.handler.SignIn)
+		auth.Post("/refresh_token", s.handler.RefreshToken)
 	}
 
-	user := app.Group("/user", s.CheckAuthMiddleware)
+	user := app.Group("/user", s.handler.CheckAuthMiddleware)
 	{
-		user.Get(":username", s.GetUser)
-		user.Put("/", s.UpdateUserInfo)
-		user.Put("/profile_pic", s.UpdateProfilePic)
-		user.Post("/daily", s.DailyReward)
+		user.Get(":username", s.handler.GetUser)
+		user.Put("/", s.handler.UpdateUserInfo)
+		user.Put("/profile_pic", s.handler.UpdateProfilePic)
+		user.Post("/daily", s.handler.DailyReward)
 	}
 
-	lobby := app.Group("/lobby", s.CheckAuthMiddleware)
+	lobby := app.Group("/lobby", s.handler.CheckAuthMiddleware)
 	{
-		lobby.Get("/", s.GetMyLobby)
-		lobby.Get("/all/:page", s.GetAllLobbies)
-		lobby.Post("/", s.CreateLobby)
+		lobby.Get("/", s.handler.GetMyLobby)
+		lobby.Get("/all/:page", s.handler.GetAllLobbies)
+		lobby.Post("/", s.handler.CreateLobby)
+	}
+	{
+		app.Get("ws/enter", websocket.New(s.handler.EnterInLobby))
 	}
 
 	return app
