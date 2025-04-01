@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -10,12 +9,17 @@ import (
 )
 
 func (h *Handler) EnterInLobby(c *websocket.Conn) {
-	userId, err := h.WSGetUserId(c)
-	fmt.Println(err)
+	_, msg, err := c.ReadMessage()
 	if err != nil {
-		WsErrorResponse(c, websocket.CloseMessage, "bad token")
+		WsErrorResponse(c, websocket.CloseMessage, err.Error())
 		return
 	}
+	token, err := h.services.JwtService.ParseToken(string(msg), true)
+	if err != nil {
+		WsErrorResponse(c, websocket.CloseMessage, err.Error())
+		return
+	}
+	userId := token.UserId
 	lobbyID, err := uuid.Parse(c.Query("lobby_id"))
 	if err != nil {
 		WsErrorResponse(c, websocket.CloseMessage, "no or invalid lobby id")
