@@ -71,6 +71,12 @@ func (h *Handler) UpdateUserInfo(c *fiber.Ctx) error {
 	return c.Status(http.StatusNoContent).JSON(nil)
 }
 
+// ProfilePicUrlStruct
+// @Schema
+type ProfilePicUrlStruct struct {
+	ProfilePicUrl string `json:"pic_url" example:"host/profiles/example.jpg"`
+}
+
 // UpdateProfilePic
 // @Summary Обновить аватар пользователя
 // @Description Обновляет аватар пользователя. Принимает изображение в формате GIF, JPG или PNG.
@@ -79,7 +85,7 @@ func (h *Handler) UpdateUserInfo(c *fiber.Ctx) error {
 // @Accept multipart/form-data
 // @Produce json
 // @Param profile_pic formData file true "Изображение для аватара"
-// @Success 204 {string} string ""
+// @Success 200 {object} ProfilePicUrlStruct "Успешное обновление"
 // @Failure 400 {object} map[string]string "bad form data"
 // @Failure 400 {object} map[string]string "bad file format"
 // @Failure 400 {object} map[string]string "unable to open file"
@@ -113,12 +119,13 @@ func (h *Handler) UpdateProfilePic(c *fiber.Ctx) error {
 	if !slices.Contains(ValidFileSuffixForProfilePicture, suffix) {
 		return ErrorResponse(c, http.StatusBadRequest, "bad file format")
 	}
-	user, err := h.services.UserService.GetUserById(userId)
-	err = h.services.UserService.UpdateProfilePic(userId, fileBytes, user.Id.String()+suffix)
+	err = h.services.UserService.UpdateProfilePic(userId, fileBytes, suffix)
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, err.Error())
 	}
-	return c.Status(http.StatusNoContent).JSON(nil)
+	user, _ := h.services.UserService.GetUserById(userId)
+	user.GenerateUrl(c.Hostname())
+	return c.Status(http.StatusOK).JSON(ProfilePicUrlStruct{ProfilePicUrl: user.ProfilePicUrl})
 }
 
 // DailyReward

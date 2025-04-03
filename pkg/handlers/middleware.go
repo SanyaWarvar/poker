@@ -13,13 +13,13 @@ import (
 func (h *Handler) CheckAuthMiddleware(c *fiber.Ctx) error {
 	accessToken := strings.Split(c.Get("Authorization"), " ")[1]
 	if accessToken == "" {
-		return ErrorResponse(c, http.StatusBadRequest, "Access token missing")
+		return ErrorResponse(c, http.StatusUnauthorized, "Access token missing")
 	}
 
 	token, err := h.services.JwtService.ParseToken(accessToken, true)
 
 	if err != nil {
-		return ErrorResponse(c, http.StatusBadRequest, "bad access token")
+		return ErrorResponse(c, http.StatusUnauthorized, "bad access token")
 	}
 	c.Locals("userId", token.UserId)
 	return c.Next()
