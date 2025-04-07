@@ -1,8 +1,6 @@
 package game
 
 import (
-	"fmt"
-
 	"github.com/SanyaWarvar/poker/pkg/holdem"
 	"github.com/google/uuid"
 )
@@ -15,6 +13,9 @@ type IHoldemService interface {
 	EnterInLobby(lobbyId, playerId uuid.UUID, balance int) error
 	OutFromLobby(lobbyId, playerId uuid.UUID) error
 	DoAction(playerId, lobbyId uuid.UUID, action string, amount int) error
+	AddObserver(lobbyId uuid.UUID, observer holdem.IObserver) error
+	StartGame(lobbyId uuid.UUID) error
+	DeleteLobby(lobbyId uuid.UUID)
 }
 
 type HoldemService struct {
@@ -28,6 +29,7 @@ func NewHoldemService(repo IHoldemRepo) *HoldemService {
 }
 
 func (s *HoldemService) CreateLobby(cfg *holdem.TableConfig, playerId uuid.UUID) (uuid.UUID, error) {
+
 	var lobbyId uuid.UUID
 	for {
 		lobbyId = uuid.New()
@@ -36,7 +38,6 @@ func (s *HoldemService) CreateLobby(cfg *holdem.TableConfig, playerId uuid.UUID)
 		if err == ErrDuplicateLobbyId {
 			continue
 		}
-		fmt.Println(lobbyId)
 		return lobbyId, nil
 	}
 }
@@ -53,7 +54,8 @@ func (s *HoldemService) GetLobbyByPId(playerId uuid.UUID) (holdem.TableConfig, e
 	return s.repo.GetLobbyByPId(playerId)
 }
 
-func (s *HoldemService) EnterInLobby(lobbyId, playerId uuid.UUID, balance int) error { //TODO change this
+// TODO change this
+func (s *HoldemService) EnterInLobby(lobbyId, playerId uuid.UUID, balance int) error {
 	lobby, err := s.GetLobbyById(lobbyId)
 	if err != nil {
 		return err
@@ -76,6 +78,17 @@ func (s *HoldemService) OutFromLobby(lobbyId, playerId uuid.UUID) error {
 	return s.repo.OutFromLobby(lobbyId, playerId)
 }
 
+func (s *HoldemService) AddObserver(lobbyId uuid.UUID, observer holdem.IObserver) error {
+	return s.repo.AddObserver(lobbyId, observer)
+}
+
 func (s *HoldemService) DoAction(playerId, lobbyId uuid.UUID, action string, amount int) error {
 	return s.repo.DoAction(playerId, lobbyId, action, amount)
+}
+
+func (s *HoldemService) StartGame(lobbyId uuid.UUID) error {
+	return s.repo.StartGame(lobbyId)
+}
+func (s *HoldemService) DeleteLobby(lobbyId uuid.UUID) {
+	s.repo.DeleteLobby(lobbyId)
 }

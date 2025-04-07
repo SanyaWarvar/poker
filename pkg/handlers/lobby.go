@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/SanyaWarvar/poker/pkg/game"
 	"github.com/SanyaWarvar/poker/pkg/holdem"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -103,10 +104,21 @@ func (h *Handler) CreateLobby(c *fiber.Ctx) error {
 		input.EnterAfterStart,
 		0,
 	)
+
 	lobbyId, err := h.services.HoldemService.CreateLobby(cfg, userId)
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, err.Error())
 	}
+	h.services.HoldemService.AddObserver(lobbyId, h.engine.Observer)
+	h.services.HoldemService.AddObserver(lobbyId, h.engine.Lt)
+	h.engine.NewLobby(lobbyId, userId, game.LobbyInfo{
+		GameStarted:  false,
+		PlayersCount: 0,
+		MinPlayers:   minPlayers,
+		LastActivity: time.Now(),
+		TTL:          game.DefaultTTL,
+		TTS:          game.DefaultTTS,
+	})
 
 	return c.Status(http.StatusCreated).JSON(map[string]string{"lobby_id": lobbyId.String()})
 }

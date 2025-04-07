@@ -10,6 +10,7 @@ import (
 
 	"github.com/SanyaWarvar/poker/pkg/auth"
 	emailsmtp "github.com/SanyaWarvar/poker/pkg/email_smtp"
+	"github.com/SanyaWarvar/poker/pkg/game"
 	"github.com/SanyaWarvar/poker/pkg/handlers"
 	"github.com/SanyaWarvar/poker/pkg/server"
 	"github.com/golang-jwt/jwt/v5"
@@ -82,7 +83,15 @@ func main() {
 
 	repos := handlers.NewRepository(db, cacheDb, emailCfg, jwtCfg)
 	services := handlers.NewService(repos)
-	h := handlers.NewHandler(services)
+	lt := game.NewLobbyTracker(services.HoldemService)
+	o := game.NewWsObserver()
+	engine := game.NewHoldemEngine(
+		services.HoldemService,
+		o,
+		lt,
+	)
+	engine.StartEngine()
+	h := handlers.NewHandler(services, engine)
 	srv := server.NewServer(h)
 
 	port := os.Getenv("PORT")

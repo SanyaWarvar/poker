@@ -41,12 +41,12 @@ type Hand struct {
 }
 
 type Player struct {
-	Balance int
-	Id      uuid.UUID
+	Id      uuid.UUID `json:"id"`
+	Balance int       `json:"balance"`
 	Status  bool
 	LastBet int
 	Hand    Hand
-	IsFold  bool
+	IsFold  bool `json:"is_fold"`
 }
 
 func (p *Player) String() string {

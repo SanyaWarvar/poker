@@ -138,7 +138,7 @@ func (t *PokerTable) CheckPlayer(playerId string) bool {
 
 func (m *TableMeta) refreshDeck(seed int64) {
 	m.Deck = GetStandardDeck()
-	var r *rand.Rand
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	if seed != 0 {
 		r = rand.New(rand.NewSource(seed))
 	}
@@ -164,9 +164,9 @@ func (t *PokerTable) AddObserver(obs IObserver) {
 	t.observers = append(t.observers, obs)
 }
 
-func (t *PokerTable) NotifyObservers(event string) {
+func (t *PokerTable) NotifyObservers(recipients []string, data ObserverMessage) {
 	for _, obs := range t.observers {
-		obs.Update(event)
+		obs.Update(recipients, data)
 	}
 }
 
@@ -186,7 +186,7 @@ func (t *PokerTable) AddPlayer(p IPlayer) error {
 		t.Meta.PlayersOrder = append(t.Meta.PlayersOrder, p.GetId())
 	}
 	t.Config.CurrentPlayers += 1
-	t.NotifyObservers(fmt.Sprintf("Player %s enter the game", p.GetId()))
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"info", fmt.Sprintf("Player %s enter the game", p.GetId())})
 	return nil
 }
 
@@ -204,9 +204,20 @@ func (t *PokerTable) StartGame() error {
 	t.Meta.GameStarted = true
 	t.Meta.CurrentRound = -1
 	t.Meta.refreshDeck(t.Config.Seed)
-	t.NotifyObservers("Game started")
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("game %s started", t.Config.TableId.String())})
 	t.NewRound()
 	return nil
+}
+
+func (t *PokerTable) SendPlayersStats() {
+	output := make([]IPlayer, 0, len(t.Meta.Players))
+	for _, v := range t.Meta.Players {
+		output = append(output, v)
+	}
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{
+		"info",
+		fmt.Sprintf("%v", output),
+	})
 }
 
 func (t *PokerTable) NewRound() error {
@@ -216,9 +227,9 @@ func (t *PokerTable) NewRound() error {
 	t.createPots()
 	t.Meta.CurrentRound += 1
 	t.Meta.CurrentBet = 0
-	t.NotifyObservers(fmt.Sprintf("New round started. Current round: %d", t.Meta.CurrentRound))
-
-	refreshPlayers(t.Meta.Players, t.Meta.CurrentRound == 4)
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("New round started. Current round: %d", t.Meta.CurrentRound)})
+	t.SendPlayersStats()
+	refreshPlayers(t.Meta.Players, false)
 	switch t.Meta.CurrentRound {
 	case 0: //pre flop
 		t.enterPlayersFromQuery()
@@ -226,24 +237,24 @@ func (t *PokerTable) NewRound() error {
 		for _, k := range t.Meta.PlayersOrder {
 			cards, _ := t.drawCard(2)
 			t.Meta.Players[k].SetHand(Hand{[2]Card{cards[0], cards[1]}})
-			t.NotifyObservers(fmt.Sprintf("Player %s get cards: %v", t.Meta.Players[k].GetId(), cards))
+			t.NotifyObservers([]string{k}, ObserverMessage{"game", fmt.Sprintf("Player %s get cards: %v", t.Meta.Players[k].GetId(), cards)})
 		}
 		t.choiceDealer()
 		t.betBlinds()
 	case 1: // flop
 		t.Meta.CommunityCards, _ = t.drawCard(3)
-		t.NotifyObservers(fmt.Sprintf("Community cards: %v", t.Meta.CommunityCards))
+		t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("Community cards: %v", t.Meta.CommunityCards)})
 		t.Meta.PlayerTurnInd = (t.Meta.DealerIndex + 1) % len(t.Meta.PlayersOrder)
 
 	case 2: // turn
 		cards, _ := t.drawCard(1)
 		t.Meta.CommunityCards = append(t.Meta.CommunityCards, cards...)
-		t.NotifyObservers(fmt.Sprintf("Community cards: %v", t.Meta.CommunityCards))
+		t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("Community cards: %v", t.Meta.CommunityCards)})
 
 	case 3: // river
 		cards, _ := t.drawCard(1)
 		t.Meta.CommunityCards = append(t.Meta.CommunityCards, cards...)
-		t.NotifyObservers(fmt.Sprintf("Community cards: %v", t.Meta.CommunityCards))
+		t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("Community cards: %v", t.Meta.CommunityCards)})
 
 	case 4: // determinate winner
 		t.PayMoney()
@@ -251,9 +262,15 @@ func (t *PokerTable) NewRound() error {
 		t.Meta.GameStarted = false
 		t.Meta.CurrentRound = -1
 		t.Meta.Pots = t.Meta.Pots[:0]
+		refreshPlayers(t.Meta.Players, true)
+		t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"info", fmt.Sprintf("game %s has been stopped", t.Config.TableId.String())})
 	}
 	t.choiceFirstMovePlayer()
-
+	t.notifyNext()
+	fmt.Println(t.Meta.Pots)
+	if t.checkReady() {
+		t.NewRound()
+	}
 	return nil
 }
 
@@ -272,6 +289,29 @@ func (cfg *TableConfig) updateSeed() {
 }
 
 func (t *PokerTable) PayMoney() {
+	active := ""
+	flag := true
+	for k, v := range t.Meta.Players {
+		fmt.Println(k, v.GetFold())
+		if v.GetFold() {
+			continue
+		}
+
+		if active != "" {
+			flag = false
+			break
+		}
+		active = k
+	}
+	if flag {
+		winSum := 0
+		for _, pot := range t.Meta.Pots {
+			winSum += pot.Amount
+		}
+		t.Meta.Players[active].ChangeBalance(winSum)
+		t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("player %s win all pots with %d total amount", active, winSum)})
+		return
+	}
 	for ind, pot := range t.Meta.Pots {
 		applicants := make(map[string]IPlayer)
 		for _, k := range pot.Applicants {
@@ -286,7 +326,7 @@ func (t *PokerTable) PayMoney() {
 		for _, winner := range winners {
 			t.Meta.Players[winner].ChangeBalance(winAmount)
 		}
-		t.NotifyObservers(fmt.Sprintf("Winners of pot %.2d with %d amount: %v", ind+1, winAmount, winners))
+		t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("Winners of pot %.2d with %d amount: %v", ind+1, winAmount, winners)})
 		if winAmount*len(winners) == pot.Amount {
 			continue
 		}
@@ -300,6 +340,7 @@ func (t *PokerTable) PayMoney() {
 			counter--
 		}
 	}
+	t.SendPlayersStats()
 }
 
 func (t *PokerTable) createPots() error {
@@ -339,7 +380,7 @@ func (t *PokerTable) betAnte() error {
 	for k, v := range t.Meta.Players {
 		if v.GetBalance() < t.Config.Ante {
 			v.GetFold()
-			t.NotifyObservers(fmt.Sprintf("Player %s cant bet ante", k))
+			t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"error", fmt.Sprintf("Player %s cant bet ante", k)})
 			toRemove = append(toRemove, k)
 		}
 	}
@@ -348,7 +389,7 @@ func (t *PokerTable) betAnte() error {
 	}
 
 	t.Meta.Pots = append(t.Meta.Pots, Pot{Amount: t.Config.Ante * len(t.Meta.Players), Applicants: t.Meta.PlayersOrder})
-	t.NotifyObservers(fmt.Sprintf("Get ante: %d", t.Config.Ante*len(t.Meta.Players)))
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("Get ante: %d", t.Config.Ante*len(t.Meta.Players))})
 	return nil
 }
 
@@ -368,12 +409,12 @@ func (t *PokerTable) betBlinds() error {
 	smallBlindPlayerBet := min(t.Config.SmallBlind, t.Meta.Players[smallBlindPlayer].GetBalance())
 	t.Meta.Players[smallBlindPlayer].ChangeBalance(-smallBlindPlayerBet)
 	t.Meta.Players[smallBlindPlayer].SetLastBet(smallBlindPlayerBet)
-	t.NotifyObservers(fmt.Sprintf("Player %s bet %d as small blind", smallBlindPlayer, smallBlindPlayerBet))
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("Player %s bet %d as small blind", smallBlindPlayer, smallBlindPlayerBet)})
 
 	bigBlindPlayerBet := min(t.Config.SmallBlind*2, t.Meta.Players[bigBlindPlayer].GetBalance())
 	t.Meta.Players[bigBlindPlayer].ChangeBalance(-bigBlindPlayerBet)
 	t.Meta.Players[bigBlindPlayer].SetLastBet(bigBlindPlayerBet)
-	t.NotifyObservers(fmt.Sprintf("Player %s bet %d as big blind", bigBlindPlayer, bigBlindPlayerBet))
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("Player %s bet %d as big blind", bigBlindPlayer, bigBlindPlayerBet)})
 	t.Meta.CurrentBet = max(bigBlindPlayerBet, smallBlindPlayerBet)
 	return nil
 }
@@ -384,7 +425,7 @@ func (t *PokerTable) getNextPlayer() {
 		nextPlayer := t.Meta.PlayersOrder[nextIndex]
 		if !t.Meta.Players[nextPlayer].GetFold() && !t.Meta.Players[nextPlayer].GetReadyStatus() {
 			t.Meta.PlayerTurnInd = nextIndex
-			t.NotifyObservers(fmt.Sprintf("Next move expect from %s player", nextPlayer))
+			t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"info", fmt.Sprintf("Next move expect from %s player", nextPlayer)})
 			return
 		}
 	}
@@ -395,7 +436,7 @@ func (t *PokerTable) choiceDealer() error {
 		return ErrGameNotStarted
 	}
 	t.Meta.DealerIndex = (t.Meta.DealerIndex + 1) % len(t.Meta.PlayersOrder)
-	t.NotifyObservers(fmt.Sprintf("dealer is %s", t.Meta.PlayersOrder[t.Meta.DealerIndex]))
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"info", fmt.Sprintf("dealer is %s", t.Meta.PlayersOrder[t.Meta.DealerIndex])})
 	return nil
 }
 
@@ -433,18 +474,22 @@ func (t *PokerTable) MakeMove(playerId, action string, amount int) error {
 	if t.Meta.Players[playerId].GetFold() {
 		return ErrPlayerIsFold
 	}
-
+	var err error
 	switch action {
 	case "check":
-		t.handleCheck(playerId)
+		err = t.handleCheck(playerId)
 	case "raise":
-		t.handleRaise(playerId, amount)
+		err = t.handleRaise(playerId, amount)
 	case "call":
-		t.handleCall(playerId)
+		err = t.handleCall(playerId)
 	case "fold":
-		t.handleFold(playerId)
+		err = t.handleFold(playerId)
 	default:
-		return ErrUnexpectedAction
+		err = ErrUnexpectedAction
+	}
+	if err != nil {
+		t.NotifyObservers([]string{playerId}, ObserverMessage{"error", err.Error()})
+		return err
 	}
 	t.Meta.Players[playerId].SetStatus(true)
 	t.getNextPlayer()
@@ -462,9 +507,9 @@ func (t *PokerTable) notifyNext() error {
 	}
 	pId := t.Meta.PlayersOrder[t.Meta.PlayerTurnInd]
 	if t.Meta.CurrentBet != 0 {
-		t.NotifyObservers(fmt.Sprintf("player %s can do call with %d", pId, t.Meta.CurrentBet))
+		t.NotifyObservers([]string{pId}, ObserverMessage{"info", fmt.Sprintf("player %s can do call with %d", pId, t.Meta.CurrentBet)})
 	} else {
-		t.NotifyObservers(fmt.Sprintf("player %s can do check", pId))
+		t.NotifyObservers([]string{pId}, ObserverMessage{"info", fmt.Sprintf("player %s can do check", pId)})
 	}
 	return nil
 }
@@ -473,11 +518,18 @@ func (t *PokerTable) checkReady() bool {
 	if !t.Meta.GameStarted {
 		return false
 	}
+	counter := 0
 	for _, v := range t.Meta.Players {
-		if (!v.GetFold() && !v.GetReadyStatus()) || v.GetBalance() == 0 {
+
+		if !v.GetFold() || v.GetBalance() == 0 {
+			counter++
+		}
+		fmt.Println(counter)
+		if counter > 1 {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -493,7 +545,7 @@ func (t *PokerTable) handleCheck(playerId string) error {
 		return ErrCantCheck
 	}
 	t.Meta.Players[playerId].SetStatus(true)
-	t.NotifyObservers(fmt.Sprintf("Player %s do check", playerId))
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("Player %s do check", playerId)})
 	return nil
 }
 
@@ -504,7 +556,7 @@ func (t *PokerTable) handleFold(playerId string) error {
 
 	t.Meta.Players[playerId].SetStatus(true)
 	t.Meta.Players[playerId].SetFold(true)
-	t.NotifyObservers(fmt.Sprintf("Player %s do fold", playerId))
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("Player %s do fold", playerId)})
 	return nil
 }
 
@@ -528,7 +580,7 @@ func (t *PokerTable) handleRaise(playerId string, amount int) error {
 	t.Meta.Players[playerId].SetStatus(true)
 	t.Meta.CurrentBet = amount
 
-	t.NotifyObservers(fmt.Sprintf("Player %s do raise with %d amount", playerId, amount))
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("Player %s do raise with %d amount", playerId, amount)})
 	return nil
 }
 
@@ -578,6 +630,9 @@ func (t *PokerTable) handleCall(playerId string) error {
 		t.Meta.Players[playerId].SetLastBet(possibleBet)
 	}
 
-	t.NotifyObservers(fmt.Sprintf("Player %s do call with %d amount", playerId, t.Meta.CurrentBet))
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{
+		"game",
+		fmt.Sprintf("Player %s do call with %d amount", playerId, t.Meta.CurrentBet)},
+	)
 	return nil
 }
