@@ -14,7 +14,7 @@ func CreatePots(players map[string]IPlayer) []Pot {
 		minBet := -1
 		applicants := make([]string, 0, len(players))
 		for k, v := range players { // находим минимальную ставку
-			if v.GetFold() || v.GetLastBet() == 0 {
+			if v.GetLastBet() == 0 {
 				continue
 			}
 			applicants = append(applicants, k)

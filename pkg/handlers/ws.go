@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"log"
 	"time"
 
+	"github.com/SanyaWarvar/poker/pkg/game"
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
 )
@@ -40,6 +42,12 @@ func (h *Handler) EnterInLobby(c *websocket.Conn) {
 		WsErrorResponse(c, websocket.CloseMessage, err.Error())
 		return
 	}
+	h.engine.Observer.Conn[userId.String()] = c
+	ok := h.engine.AddPlayer(lobbyID)
+	if !ok {
+		WsErrorResponse(c, websocket.CloseMessage, "cant enter")
+		return
+	}
 	c.WriteJSON(map[string]string{"details": "success"})
 
 	done := make(chan struct{})
@@ -68,7 +76,8 @@ func (h *Handler) EnterInLobby(c *websocket.Conn) {
 	})
 
 	for {
-		messageType, msg, err := c.ReadMessage()
+		var pMove game.PlayerMove
+		_, msg, err := c.ReadMessage()
 		if err != nil {
 			close(done)
 			if websocket.IsUnexpectedCloseError(err) {
@@ -76,13 +85,12 @@ func (h *Handler) EnterInLobby(c *websocket.Conn) {
 			}
 			return
 		}
-
-		log.Printf("Received: %s", msg)
-
-		if err := c.WriteMessage(messageType, msg); err != nil {
-			close(done)
-			log.Println("Write error:", err)
-			return
+		err = json.Unmarshal(msg, &pMove)
+		if err != nil {
+			WsErrorResponse(c, websocket.TextMessage, err.Error())
 		}
+		pMove.PlayerId = userId
+		pMove.LobbyId = lobbyID
+		h.engine.HandleMove(pMove)
 	}
 }

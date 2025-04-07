@@ -26,6 +26,8 @@ type IHoldemRepo interface {
 	OutFromLobby(lobbyId, playerId uuid.UUID) error
 	DoAction(playerId, lobbyId uuid.UUID, action string, amount int) error
 	DeleteLobby(lobbyId uuid.UUID)
+	AddObserver(lobbyId uuid.UUID, observer holdem.IObserver) error
+	StartGame(lobbyId uuid.UUID) error
 }
 
 type HoldemRepo struct {
@@ -42,6 +44,7 @@ func NewHoldemRepo() *HoldemRepo {
 }
 
 func (r *HoldemRepo) CreateLobby(cfg *holdem.TableConfig, lobbyId uuid.UUID) error {
+	fmt.Println(r.db)
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, ok := r.db[lobbyId.String()]; ok {
@@ -140,4 +143,25 @@ func (r *HoldemRepo) DeleteLobby(lobbyId uuid.UUID) {
 	delete(r.db, lobbyId.String())
 	ind := slices.Index(r.list, lobbyId.String())
 	r.list = append(r.list[:ind], r.list[ind+1:]...)
+}
+
+func (r *HoldemRepo) AddObserver(lobbyId uuid.UUID, observer holdem.IObserver) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	l, ok := r.db[lobbyId.String()]
+	if !ok {
+		return ErrLobbyNotFound
+	}
+	l.AddObserver(observer)
+	return nil
+}
+
+func (r *HoldemRepo) StartGame(lobbyId uuid.UUID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	l, ok := r.db[lobbyId.String()]
+	if !ok {
+		return ErrLobbyNotFound
+	}
+	return l.StartGame()
 }

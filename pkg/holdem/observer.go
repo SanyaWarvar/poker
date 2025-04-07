@@ -5,11 +5,16 @@ import (
 )
 
 type IObserver interface {
-	Update(event string)
+	Update(recipients []string, data ObserverMessage)
+}
+
+type ObserverMessage struct {
+	EventType string
+	EventData string
 }
 
 type Logger struct{}
 
-func (l Logger) Update(event string) {
-	fmt.Println("Event:", event)
+func (l Logger) Update(recipients []string, data ObserverMessage) {
+	fmt.Printf("[%s] %v\n", data.EventType, data.EventData)
 }

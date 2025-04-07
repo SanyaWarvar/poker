@@ -105,3 +105,26 @@ func TestTableGame2Good(t *testing.T) {
 		require.Equal(t, table.Meta.GameStarted, false)
 	})
 }
+
+func TestTableGame3Good(t *testing.T) {
+	t.Run("game 3", func(t *testing.T) {
+		config := NewTableConfig(time.Hour, 10, 2, 50, 0, 0, false, 1488)
+		table := NewPokerTable(config)
+		p1 := &Player{Id: uuid.MustParse("00000000-0000-0000-0000-000000000001"), Balance: 1000} //bb
+		p2 := &Player{Id: uuid.MustParse("00000000-0000-0000-0000-000000000002"), Balance: 1000} //dealer
+		p1Id := p1.GetId()
+		//p2Id := p2.GetId()
+		err := table.AddPlayer(p1)
+		fmt.Println(err)
+		err = table.AddPlayer(p2)
+		fmt.Println(err)
+		table.AddObserver(Logger{})
+		table.StartGame()
+		fmt.Println(table.MakeMove(p1Id, "fold", 0))
+
+		require.Equal(t, table.Meta.GameStarted, false)
+		fmt.Println(p1.Balance, p2.Balance)
+		require.Equal(t, p1.Balance, 900)
+		require.Equal(t, p2.Balance, 1100)
+	})
+}
