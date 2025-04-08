@@ -19,6 +19,6 @@ func NewService(repos *Repository) *Service {
 		JwtService:       auth.NewJwtManagerService(repos.JwtRepo),
 		UserService:      user.NewUserService(repos.UserRepo, repos.UserCacheRepo),
 		EmailSmtpService: emailsmtp.NewEmailSmtpService(repos.EmailSmtpRepo, repos.EmailSmtpCacheRepo),
-		HoldemService:    game.NewHoldemService(repos.HoldemRepo),
+		HoldemService:    game.NewHoldemService(repos.HoldemRepo, repos.UserRepo),
 	}
 }

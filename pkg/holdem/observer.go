@@ -10,7 +10,7 @@ type IObserver interface {
 
 type ObserverMessage struct {
 	EventType string
-	EventData string
+	EventData interface{}
 }
 
 type Logger struct{}

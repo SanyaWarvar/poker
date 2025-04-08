@@ -21,6 +21,7 @@ type IUserService interface {
 	UpdateUsername(userId uuid.UUID, username string) error // будем обновлять именно эту инфу.
 	GetDaily(userId uuid.UUID) (DailyReward, error)
 	ChangeBalance(userId uuid.UUID, delta int) error //TODO
+	GetPlayersByIdLIst(idList []uuid.UUID) ([]User, error)
 }
 
 type UserService struct {
@@ -123,4 +124,8 @@ func (s *UserService) GetDaily(userId uuid.UUID) (DailyReward, error) {
 
 func (s *UserService) ChangeBalance(userId uuid.UUID, delta int) error {
 	return s.repo.ChangeBalance(userId, delta)
+}
+
+func (s *UserService) GetPlayersByIdLIst(idList []uuid.UUID) ([]User, error) {
+	return s.repo.GetPlayersByIdLIst(idList)
 }

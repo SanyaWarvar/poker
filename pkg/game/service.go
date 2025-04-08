@@ -2,14 +2,15 @@ package game
 
 import (
 	"github.com/SanyaWarvar/poker/pkg/holdem"
+	"github.com/SanyaWarvar/poker/pkg/user"
 	"github.com/google/uuid"
 )
 
 type IHoldemService interface {
 	CreateLobby(cfg *holdem.TableConfig, playerId uuid.UUID) (uuid.UUID, error)
-	GetLobbyList(page int) []holdem.TableConfig
-	GetLobbyById(lobbyId uuid.UUID) (holdem.TableConfig, error)
-	GetLobbyByPId(playerId uuid.UUID) (holdem.TableConfig, error)
+	GetLobbyList(page int) ([]LobbyOutput, error)
+	GetLobbyById(lobbyId uuid.UUID) (LobbyOutput, error)
+	GetLobbyByPId(playerId uuid.UUID) (LobbyOutput, error)
 	EnterInLobby(lobbyId, playerId uuid.UUID, balance int) error
 	OutFromLobby(lobbyId, playerId uuid.UUID) error
 	DoAction(playerId, lobbyId uuid.UUID, action string, amount int) error
@@ -19,12 +20,14 @@ type IHoldemService interface {
 }
 
 type HoldemService struct {
-	repo IHoldemRepo
+	holdemRepo IHoldemRepo
+	userRepo   user.IUserRepo
 }
 
-func NewHoldemService(repo IHoldemRepo) *HoldemService {
+func NewHoldemService(holdemRepo IHoldemRepo, userRepo user.IUserRepo) *HoldemService {
 	return &HoldemService{
-		repo: repo,
+		holdemRepo: holdemRepo,
+		userRepo:   userRepo,
 	}
 }
 
@@ -34,7 +37,7 @@ func (s *HoldemService) CreateLobby(cfg *holdem.TableConfig, playerId uuid.UUID)
 	for {
 		lobbyId = uuid.New()
 		cfg.TableId = lobbyId
-		err := s.repo.CreateLobby(cfg, lobbyId)
+		err := s.holdemRepo.CreateLobby(cfg, lobbyId)
 		if err == ErrDuplicateLobbyId {
 			continue
 		}
@@ -42,16 +45,60 @@ func (s *HoldemService) CreateLobby(cfg *holdem.TableConfig, playerId uuid.UUID)
 	}
 }
 
-func (s *HoldemService) GetLobbyList(page int) []holdem.TableConfig {
-	return s.repo.GetLobbyList(page)
+func (s *HoldemService) GetLobbyList(page int) ([]LobbyOutput, error) {
+	info := s.holdemRepo.GetLobbyList(page)
+	output := make([]LobbyOutput, 0, len(info))
+	for ind, _ := range info {
+		playersId, err := s.holdemRepo.PlayersIdFromLobbyById(info[ind].TableId)
+		if err != nil {
+			return []LobbyOutput{}, err
+		}
+		players, err := s.userRepo.GetPlayersByIdLIst(playersId)
+		if err != nil {
+			return []LobbyOutput{}, err
+		}
+		output = append(output, LobbyOutput{
+			Info:    info[ind],
+			Players: players,
+		})
+
+	}
+	return output, nil
 }
 
-func (s *HoldemService) GetLobbyById(lobbyId uuid.UUID) (holdem.TableConfig, error) {
-	return s.repo.GetLobbyById(lobbyId)
+func (s *HoldemService) GetLobbyById(lobbyId uuid.UUID) (LobbyOutput, error) {
+	var output LobbyOutput
+	info, err := s.holdemRepo.GetLobbyById(lobbyId)
+	if err != nil {
+		return output, err
+	}
+	pId, err := s.holdemRepo.PlayersIdFromLobbyById(lobbyId)
+	if err != nil {
+		return output, err
+	}
+	players, err := s.userRepo.GetPlayersByIdLIst(pId)
+	if err != nil {
+		return output, err
+	}
+	return LobbyOutput{Info: info, Players: players}, nil
 }
 
-func (s *HoldemService) GetLobbyByPId(playerId uuid.UUID) (holdem.TableConfig, error) {
-	return s.repo.GetLobbyByPId(playerId)
+func (s *HoldemService) GetLobbyByPId(playerId uuid.UUID) (LobbyOutput, error) {
+	var output LobbyOutput
+
+	info, err := s.holdemRepo.GetLobbyByPId(playerId)
+	if err != nil {
+		return output, err
+	}
+	pId, err := s.holdemRepo.PlayersIdFromLobbyById(info.TableId)
+	if err != nil {
+		return output, err
+	}
+	players, err := s.userRepo.GetPlayersByIdLIst(pId)
+	if err != nil {
+		return output, err
+	}
+	return LobbyOutput{Info: info, Players: players}, nil
 }
 
 // TODO change this
@@ -68,27 +115,27 @@ func (s *HoldemService) EnterInLobby(lobbyId, playerId uuid.UUID, balance int) e
 		Hand:    holdem.Hand{Cards: [2]holdem.Card{}},
 		IsFold:  false,
 	}
-	if lobby.BankAmount != 0 {
-		p.Balance = lobby.BankAmount
+	if lobby.Info.BankAmount != 0 {
+		p.Balance = lobby.Info.BankAmount
 	}
-	return s.repo.EnterInLobby(lobbyId, p)
+	return s.holdemRepo.EnterInLobby(lobbyId, p)
 }
 
 func (s *HoldemService) OutFromLobby(lobbyId, playerId uuid.UUID) error {
-	return s.repo.OutFromLobby(lobbyId, playerId)
+	return s.holdemRepo.OutFromLobby(lobbyId, playerId)
 }
 
 func (s *HoldemService) AddObserver(lobbyId uuid.UUID, observer holdem.IObserver) error {
-	return s.repo.AddObserver(lobbyId, observer)
+	return s.holdemRepo.AddObserver(lobbyId, observer)
 }
 
 func (s *HoldemService) DoAction(playerId, lobbyId uuid.UUID, action string, amount int) error {
-	return s.repo.DoAction(playerId, lobbyId, action, amount)
+	return s.holdemRepo.DoAction(playerId, lobbyId, action, amount)
 }
 
 func (s *HoldemService) StartGame(lobbyId uuid.UUID) error {
-	return s.repo.StartGame(lobbyId)
+	return s.holdemRepo.StartGame(lobbyId)
 }
 func (s *HoldemService) DeleteLobby(lobbyId uuid.UUID) {
-	s.repo.DeleteLobby(lobbyId)
+	s.holdemRepo.DeleteLobby(lobbyId)
 }

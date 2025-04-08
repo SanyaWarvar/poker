@@ -1,3 +1,4 @@
 .env
 user_data/profile_pictures/*
 !user_data/profile_pictures/default_pic.jpg
+.vscode

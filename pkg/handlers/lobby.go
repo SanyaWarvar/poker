@@ -49,7 +49,10 @@ func (h *Handler) GetAllLobbies(c *fiber.Ctx) error {
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, "bad page param")
 	}
-	lobbies := h.services.HoldemService.GetLobbyList(page)
+	lobbies, err := h.services.HoldemService.GetLobbyList(page)
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, err.Error())
+	}
 	return c.Status(http.StatusOK).JSON(lobbies)
 }
 

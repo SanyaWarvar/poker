@@ -43,10 +43,10 @@ type Hand struct {
 type Player struct {
 	Id      uuid.UUID `json:"id"`
 	Balance int       `json:"balance"`
-	Status  bool
-	LastBet int
-	Hand    Hand
-	IsFold  bool `json:"is_fold"`
+	Status  bool      `json:"-"`
+	LastBet int       `json:"-"`
+	Hand    Hand      `json:"-"`
+	IsFold  bool      `json:"-"`
 }
 
 func (p *Player) String() string {

@@ -32,7 +32,7 @@ func (h *Handler) GetUser(c *fiber.Ctx) error {
 	if err != nil { // TODO возможно могут быть другие проблемы?
 		return ErrorResponse(c, http.StatusNotFound, "user not found")
 	}
-	user.GenerateUrl(c.Hostname())
+	user.GenerateUrl()
 	return c.Status(http.StatusOK).JSON(user)
 }
 
@@ -124,7 +124,7 @@ func (h *Handler) UpdateProfilePic(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusBadRequest, err.Error())
 	}
 	user, _ := h.services.UserService.GetUserById(userId)
-	user.GenerateUrl(c.Hostname())
+	user.GenerateUrl()
 	return c.Status(http.StatusOK).JSON(ProfilePicUrlStruct{ProfilePicUrl: user.ProfilePicUrl})
 }
 

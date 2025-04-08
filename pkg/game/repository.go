@@ -28,6 +28,7 @@ type IHoldemRepo interface {
 	DeleteLobby(lobbyId uuid.UUID)
 	AddObserver(lobbyId uuid.UUID, observer holdem.IObserver) error
 	StartGame(lobbyId uuid.UUID) error
+	PlayersIdFromLobbyById(lobbyId uuid.UUID) ([]uuid.UUID, error)
 }
 
 type HoldemRepo struct {
@@ -164,4 +165,23 @@ func (r *HoldemRepo) StartGame(lobbyId uuid.UUID) error {
 		return ErrLobbyNotFound
 	}
 	return l.StartGame()
+}
+
+func (r *HoldemRepo) PlayersIdFromLobbyById(lobbyId uuid.UUID) ([]uuid.UUID, error) {
+	var output []uuid.UUID
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	l, ok := r.db[lobbyId.String()]
+	if !ok {
+		return output, ErrLobbyNotFound
+	}
+	idList := l.GetPlayerList()
+	for _, v := range idList {
+		data, err := uuid.Parse(v)
+		if err != nil {
+			return []uuid.UUID{}, err
+		}
+		output = append(output, data)
+	}
+	return output, nil
 }

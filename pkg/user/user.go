@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -64,7 +65,8 @@ func CheckUsername(username string) bool {
 	return false
 }
 
-func (u *User) GenerateUrl(host string) error {
+func (u *User) GenerateUrl() error {
+	host := os.Getenv("HOST")
 	filename := strings.Split(u.ProfilePic, "/")
 	u.ProfilePicUrl = fmt.Sprintf("%s/profiles/%s", host, filename[len(filename)-1])
 	return nil

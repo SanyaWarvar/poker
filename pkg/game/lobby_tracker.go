@@ -47,8 +47,11 @@ func (lt *LobbyTracker) Update(recipients []string, data holdem.ObserverMessage)
 	if !slices.Contains(LobbyTrackerEventTypes, data.EventType) {
 		return
 	}
-
-	msg := strings.Split(data.EventData, " ")
+	s, ok := data.EventData.(string)
+	if !ok {
+		return
+	}
+	msg := strings.Split(s, " ")
 	lId := msg[1]
 	if (len(msg) == 5 && strings.Join(slices.Delete(msg, 1, 2), " ") == "game has been stopped") ||
 		(len(msg) == 3 && strings.Join(slices.Delete(msg, 1, 2), " ") == "game started") ||
@@ -85,14 +88,11 @@ func (lt *LobbyTracker) GameMonitor(interval time.Duration, lobbyId string) {
 				return
 			}
 
-			fmt.Println(info)
-
 			if !info.GameStarted && info.PlayersCount >= info.MinPlayers {
 				go func(id string, tts time.Duration) {
 					time.Sleep(tts)
 					lt.mu.Lock()
 					defer lt.mu.Unlock()
-
 					if info, exists := lt.lobbies[id]; exists &&
 						!info.GameStarted &&
 						info.PlayersCount >= info.MinPlayers {
@@ -102,6 +102,7 @@ func (lt *LobbyTracker) GameMonitor(interval time.Duration, lobbyId string) {
 						cancel()
 					}
 				}(lobbyId, info.TTS)
+
 			} else if !info.GameStarted && info.PlayersCount == 0 {
 				go func(id string, ttl time.Duration) {
 					time.Sleep(ttl)

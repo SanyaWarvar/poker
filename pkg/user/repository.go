@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -27,6 +28,7 @@ type IUserRepo interface {
 	GetUserByUsername(username string) (User, error)
 	SaveProfilePic(userId uuid.UUID, picture []byte, filename string) error
 	ChangeBalance(userId uuid.UUID, delta int) error
+	GetPlayersByIdLIst(idList []uuid.UUID) ([]User, error)
 }
 
 type UserPostgres struct {
@@ -193,4 +195,17 @@ func (r *UserPostgres) ChangeBalance(userId uuid.UUID, delta int) error {
 	}
 	err = tx.Commit()
 	return err
+}
+
+func (r *UserPostgres) GetPlayersByIdLIst(idList []uuid.UUID) ([]User, error) {
+	var output []User
+	query := fmt.Sprintf(
+		`
+		SELECT * FROM users
+		WHERE id = any($1)
+		`,
+	)
+	err := r.db.Select(&output, query, pq.Array(idList))
+
+	return output, err
 }

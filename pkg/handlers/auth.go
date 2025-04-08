@@ -101,7 +101,7 @@ func (h *Handler) SignIn(c *fiber.Ctx) error {
 	if err != nil {
 		return ErrorResponse(c, http.StatusUnauthorized, "Invalid email or password")
 	}
-	user.GenerateUrl(c.Hostname())
+	user.GenerateUrl()
 	if !user.IsEmailConfirmed {
 		return ErrorResponse(c, http.StatusForbidden, "Email not confirmed")
 	}

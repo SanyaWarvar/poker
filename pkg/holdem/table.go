@@ -33,6 +33,7 @@ type IPokerTable interface {
 	MakeMove(playerId, action string, amount int) error
 	GetConfig() *TableConfig
 	CheckPlayer(playerId string) bool
+	GetPlayerList() []string
 }
 
 // TableConfig
@@ -209,6 +210,10 @@ func (t *PokerTable) StartGame() error {
 	return nil
 }
 
+func (t *PokerTable) GetPlayerList() []string {
+	return t.Meta.PlayersOrder
+}
+
 func (t *PokerTable) SendPlayersStats() {
 	output := make([]IPlayer, 0, len(t.Meta.Players))
 	for _, v := range t.Meta.Players {
@@ -216,7 +221,7 @@ func (t *PokerTable) SendPlayersStats() {
 	}
 	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{
 		"info",
-		fmt.Sprintf("%v", output),
+		output,
 	})
 }
 
@@ -228,7 +233,6 @@ func (t *PokerTable) NewRound() error {
 	t.Meta.CurrentRound += 1
 	t.Meta.CurrentBet = 0
 	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game", fmt.Sprintf("New round started. Current round: %d", t.Meta.CurrentRound)})
-	t.SendPlayersStats()
 	refreshPlayers(t.Meta.Players, false)
 	switch t.Meta.CurrentRound {
 	case 0: //pre flop
@@ -267,7 +271,7 @@ func (t *PokerTable) NewRound() error {
 	}
 	t.choiceFirstMovePlayer()
 	t.notifyNext()
-	fmt.Println(t.Meta.Pots)
+	t.SendPlayersStats()
 	if t.checkReady() {
 		t.NewRound()
 	}

@@ -48,8 +48,16 @@ func (h *Handler) EnterInLobby(c *websocket.Conn) {
 		WsErrorResponse(c, websocket.CloseMessage, "cant enter")
 		return
 	}
-	c.WriteJSON(map[string]string{"details": "success"})
-
+	lInfo, err := h.services.HoldemService.GetLobbyById(lobbyID)
+	if err != nil {
+		WsErrorResponse(c, websocket.CloseMessage, err.Error())
+		return
+	}
+	for ind, v := range lInfo.Players {
+		v.GenerateUrl()
+		lInfo.Players[ind] = v
+	}
+	c.WriteJSON(lInfo)
 	done := make(chan struct{})
 
 	go func() {
