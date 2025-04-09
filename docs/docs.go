@@ -22,7 +22,851 @@ const docTemplate = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {}
+    "paths": {
+        "/auth/confirm_email": {
+            "post": {
+                "description": "Подтвердить почту",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Подтвердить почту",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ConfirmCodeInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid confirmation code",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponseStruct"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to confirm code",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponseStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh_token": {
+            "post": {
+                "description": "Обновляет хедеры с авторизационными токенами",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Обновление токенов",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.RefreshInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "$ref": "#/definitions/auth.RefreshInput"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad access token",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponseStruct"
+                        }
+                    },
+                    "401": {
+                        "description": "Bad refresh token",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponseStruct"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to generate tokens",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponseStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/send_code": {
+            "post": {
+                "description": "Отправляет код подтверждения почты",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Отрпавить код",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.EmailAndPasswordInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "email already confirmed",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponseStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/sign_in": {
+            "post": {
+                "description": "Вход в аккаунт с подтвержденной почтой",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Вход",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.EmailAndPasswordInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SignInOutput"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid json",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponseStruct"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid email or password",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponseStruct"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not confirmed",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponseStruct"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to generate tokens",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponseStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/sign_up": {
+            "post": {
+                "description": "Регистрирует нового пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Регистрирация",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UserInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid username or password",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponseStruct"
+                        }
+                    },
+                    "404": {
+                        "description": "This username already exist",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponseStruct"
+                        }
+                    }
+                }
+            }
+        },
+        "/lobby/": {
+            "get": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Получить id лобби в котором находишься",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lobby"
+                ],
+                "summary": "Получить id лобби в котором находишься",
+                "responses": {
+                    "200": {
+                        "description": "Успех",
+                        "schema": {
+                            "$ref": "#/definitions/holdem.TableConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "точно не знаю что тут может выпасть. наверное что то в духе lobby not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "bad user id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Создаить лобби",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lobby"
+                ],
+                "summary": "Создать лобби",
+                "parameters": [
+                    {
+                        "description": "Данные для лобби",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.TableConfigInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "id лобби",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "точно не знаю что тут может выпасть",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "bad user id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/lobby/all/{page}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Получить список лобби с пагинацией (размер страницы - 50)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lobby"
+                ],
+                "summary": "Получить список лобби",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список лобби",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/holdem.TableConfig"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный параметр страницы",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/": {
+            "put": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Обновляет username пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Обновить пользовательские данные",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UsernameInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "bad json",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "bad user id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "user not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/daily": {
+            "post": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Получить награду за ежедневный вход",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Ежедневный вход",
+                "responses": {
+                    "200": {
+                        "description": "Успех",
+                        "schema": {
+                            "$ref": "#/definitions/user.DailyReward"
+                        }
+                    },
+                    "400": {
+                        "description": "next possible daily reward will available at {date}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "bad user id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/profile_pic": {
+            "put": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Обновляет аватар пользователя. Принимает изображение в формате GIF, JPG или PNG.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Обновить аватар пользователя",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Изображение для аватара",
+                        "name": "profile_pic",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешное обновление",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ProfilePicUrlStruct"
+                        }
+                    },
+                    "400": {
+                        "description": "unable to open file",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "bad user id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "user not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{username}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Возвращает данные пользователя по его имени.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Получить пользователя по имени",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Имя пользователя",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_SanyaWarvar_poker_pkg_user.User"
+                        }
+                    },
+                    "400": {
+                        "description": "username cant be empty",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "user not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "auth.RefreshInput": {
+            "type": "object",
+            "required": [
+                "access_token",
+                "refresh_token"
+            ],
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_SanyaWarvar_poker_pkg_user.User": {
+            "type": "object",
+            "required": [
+                "email",
+                "username"
+            ],
+            "properties": {
+                "balance": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "profile_picture_url": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.ConfirmCodeInput": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "123456"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                }
+            }
+        },
+        "handlers.EmailAndPasswordInput": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "password"
+                }
+            }
+        },
+        "handlers.ErrorResponseStruct": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.ProfilePicUrlStruct": {
+            "type": "object",
+            "properties": {
+                "pic_url": {
+                    "type": "string",
+                    "example": "host/profiles/example.jpg"
+                }
+            }
+        },
+        "handlers.SignInOutput": {
+            "type": "object",
+            "properties": {
+                "tokens": {
+                    "$ref": "#/definitions/auth.RefreshInput"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_SanyaWarvar_poker_pkg_user.User"
+                }
+            }
+        },
+        "handlers.TableConfigInput": {
+            "type": "object",
+            "properties": {
+                "ante": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "bank_amount": {
+                    "type": "integer"
+                },
+                "blind_increase_time": {
+                    "type": "string",
+                    "example": "15m"
+                },
+                "cache_game": {
+                    "description": "true = cache game. false = sit n go",
+                    "type": "boolean",
+                    "example": true
+                },
+                "max_players": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "small_blind": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "handlers.UserInput": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "password"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "john_doe"
+                }
+            }
+        },
+        "handlers.UsernameInput": {
+            "type": "object",
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "example": "john doe"
+                }
+            }
+        },
+        "holdem.TableConfig": {
+            "type": "object",
+            "properties": {
+                "ante": {
+                    "type": "integer"
+                },
+                "bank_amount": {
+                    "type": "integer"
+                },
+                "blind_increase_time": {
+                    "$ref": "#/definitions/time.Duration"
+                },
+                "cache_game": {
+                    "description": "true = cache game. false = sit n go",
+                    "type": "boolean"
+                },
+                "current_players_count": {
+                    "type": "integer"
+                },
+                "last_blind_increase_time": {
+                    "type": "string"
+                },
+                "lobby_id": {
+                    "type": "string"
+                },
+                "max_players": {
+                    "type": "integer"
+                },
+                "min_players_to_start": {
+                    "type": "integer"
+                },
+                "small_blind": {
+                    "type": "integer"
+                }
+            }
+        },
+        "time.Duration": {
+            "type": "integer",
+            "enum": [
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000
+            ],
+            "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour"
+            ]
+        },
+        "user.DailyReward": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 1000
+                },
+                "sector": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        }
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it

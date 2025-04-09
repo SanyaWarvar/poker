@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 
+	_ "github.com/SanyaWarvar/poker/docs"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
 	"github.com/sirupsen/logrus"

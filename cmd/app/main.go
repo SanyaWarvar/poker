@@ -85,9 +85,11 @@ func main() {
 	services := handlers.NewService(repos)
 	lt := game.NewLobbyTracker(services.HoldemService)
 	o := game.NewWsObserver()
+	b := game.NewBalanceObserver(services.UserService)
 	engine := game.NewHoldemEngine(
 		services.HoldemService,
 		o,
+		b,
 		lt,
 	)
 	engine.StartEngine()

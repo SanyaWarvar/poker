@@ -1,4 +1,157 @@
 basePath: /
+definitions:
+  auth.RefreshInput:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    required:
+    - access_token
+    - refresh_token
+    type: object
+  github_com_SanyaWarvar_poker_pkg_user.User:
+    properties:
+      balance:
+        type: integer
+      email:
+        type: string
+      profile_picture_url:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - username
+    type: object
+  handlers.ConfirmCodeInput:
+    properties:
+      code:
+        example: "123456"
+        type: string
+      email:
+        example: john@example.com
+        type: string
+    type: object
+  handlers.EmailAndPasswordInput:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: password
+        type: string
+    type: object
+  handlers.ErrorResponseStruct:
+    properties:
+      message:
+        type: string
+    type: object
+  handlers.ProfilePicUrlStruct:
+    properties:
+      pic_url:
+        example: host/profiles/example.jpg
+        type: string
+    type: object
+  handlers.SignInOutput:
+    properties:
+      tokens:
+        $ref: '#/definitions/auth.RefreshInput'
+      user:
+        $ref: '#/definitions/github_com_SanyaWarvar_poker_pkg_user.User'
+    type: object
+  handlers.TableConfigInput:
+    properties:
+      ante:
+        example: 25
+        type: integer
+      bank_amount:
+        type: integer
+      blind_increase_time:
+        example: 15m
+        type: string
+      cache_game:
+        description: true = cache game. false = sit n go
+        example: true
+        type: boolean
+      max_players:
+        example: 7
+        type: integer
+      small_blind:
+        example: 100
+        type: integer
+    type: object
+  handlers.UserInput:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: password
+        type: string
+      username:
+        example: john_doe
+        type: string
+    type: object
+  handlers.UsernameInput:
+    properties:
+      username:
+        example: john doe
+        type: string
+    type: object
+  holdem.TableConfig:
+    properties:
+      ante:
+        type: integer
+      bank_amount:
+        type: integer
+      blind_increase_time:
+        $ref: '#/definitions/time.Duration'
+      cache_game:
+        description: true = cache game. false = sit n go
+        type: boolean
+      current_players_count:
+        type: integer
+      last_blind_increase_time:
+        type: string
+      lobby_id:
+        type: string
+      max_players:
+        type: integer
+      min_players_to_start:
+        type: integer
+      small_blind:
+        type: integer
+    type: object
+  time.Duration:
+    enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    type: integer
+    x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+  user.DailyReward:
+    properties:
+      amount:
+        example: 1000
+        type: integer
+      sector:
+        example: 1
+        type: integer
+    type: object
 host: https://poker-tt7i.onrender.com
 info:
   contact:
@@ -11,5 +164,408 @@ info:
   termsOfService: http://swagger.io/terms/
   title: Card House API
   version: "1.0"
-paths: {}
+paths:
+  /auth/confirm_email:
+    post:
+      consumes:
+      - application/json
+      description: Подтвердить почту
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ConfirmCodeInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешный ответ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid confirmation code
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponseStruct'
+        "500":
+          description: Failed to confirm code
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponseStruct'
+      summary: Подтвердить почту
+      tags:
+      - auth
+  /auth/refresh_token:
+    post:
+      description: Обновляет хедеры с авторизационными токенами
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RefreshInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешный ответ
+          schema:
+            $ref: '#/definitions/auth.RefreshInput'
+        "400":
+          description: Bad access token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponseStruct'
+        "401":
+          description: Bad refresh token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponseStruct'
+        "500":
+          description: Failed to generate tokens
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponseStruct'
+      summary: Обновление токенов
+      tags:
+      - auth
+  /auth/send_code:
+    post:
+      consumes:
+      - application/json
+      description: Отправляет код подтверждения почты
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.EmailAndPasswordInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешный ответ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: email already confirmed
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponseStruct'
+      summary: Отрпавить код
+      tags:
+      - auth
+  /auth/sign_in:
+    post:
+      consumes:
+      - application/json
+      description: Вход в аккаунт с подтвержденной почтой
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.EmailAndPasswordInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешный ответ
+          schema:
+            $ref: '#/definitions/handlers.SignInOutput'
+        "400":
+          description: Invalid json
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponseStruct'
+        "401":
+          description: Invalid email or password
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponseStruct'
+        "403":
+          description: Email not confirmed
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponseStruct'
+        "500":
+          description: Failed to generate tokens
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponseStruct'
+      summary: Вход
+      tags:
+      - auth
+  /auth/sign_up:
+    post:
+      consumes:
+      - application/json
+      description: Регистрирует нового пользователя
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UserInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешный ответ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid username or password
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponseStruct'
+        "404":
+          description: This username already exist
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponseStruct'
+      summary: Регистрирация
+      tags:
+      - auth
+  /lobby/:
+    get:
+      description: Получить id лобби в котором находишься
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успех
+          schema:
+            $ref: '#/definitions/holdem.TableConfig'
+        "400":
+          description: точно не знаю что тут может выпасть. наверное что то в духе
+            lobby not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: bad user id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Получить id лобби в котором находишься
+      tags:
+      - lobby
+    post:
+      description: Создаить лобби
+      parameters:
+      - description: Данные для лобби
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.TableConfigInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: id лобби
+          schema:
+            type: string
+        "400":
+          description: точно не знаю что тут может выпасть
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: bad user id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Создать лобби
+      tags:
+      - lobby
+  /lobby/all/{page}:
+    get:
+      description: Получить список лобби с пагинацией (размер страницы - 50)
+      parameters:
+      - description: Номер страницы
+        in: query
+        minimum: 1
+        name: page
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список лобби
+          schema:
+            items:
+              $ref: '#/definitions/holdem.TableConfig'
+            type: array
+        "400":
+          description: Неверный параметр страницы
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Получить список лобби
+      tags:
+      - lobby
+  /user/:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет username пользователя
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UsernameInput'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: bad json
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: bad user id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: user not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Обновить пользовательские данные
+      tags:
+      - user
+  /user/{username}:
+    get:
+      description: Возвращает данные пользователя по его имени.
+      parameters:
+      - description: Имя пользователя
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный ответ
+          schema:
+            $ref: '#/definitions/github_com_SanyaWarvar_poker_pkg_user.User'
+        "400":
+          description: username cant be empty
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: user not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Получить пользователя по имени
+      tags:
+      - user
+  /user/daily:
+    post:
+      description: Получить награду за ежедневный вход
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успех
+          schema:
+            $ref: '#/definitions/user.DailyReward'
+        "400":
+          description: next possible daily reward will available at {date}
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: bad user id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Ежедневный вход
+      tags:
+      - user
+  /user/profile_pic:
+    put:
+      consumes:
+      - multipart/form-data
+      description: Обновляет аватар пользователя. Принимает изображение в формате
+        GIF, JPG или PNG.
+      parameters:
+      - description: Изображение для аватара
+        in: formData
+        name: profile_pic
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное обновление
+          schema:
+            $ref: '#/definitions/handlers.ProfilePicUrlStruct'
+        "400":
+          description: unable to open file
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: bad user id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: user not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Обновить аватар пользователя
+      tags:
+      - user
 swagger: "2.0"

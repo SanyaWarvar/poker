@@ -14,16 +14,18 @@ type PlayerMove struct {
 }
 
 type HoldemEngine struct {
-	service  IHoldemService
-	Observer *WsObserver
-	Lt       *LobbyTracker
+	service    IHoldemService
+	WsObserver *WsObserver
+	BObserver  *BalanceObserver
+	Lt         *LobbyTracker
 }
 
-func NewHoldemEngine(s IHoldemService, o *WsObserver, lt *LobbyTracker) *HoldemEngine {
+func NewHoldemEngine(s IHoldemService, o *WsObserver, b *BalanceObserver, lt *LobbyTracker) *HoldemEngine {
 	return &HoldemEngine{
-		service:  s,
-		Observer: o,
-		Lt:       lt,
+		service:    s,
+		WsObserver: o,
+		BObserver:  b,
+		Lt:         lt,
 	}
 }
 

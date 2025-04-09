@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	_ "github.com/SanyaWarvar/poker/docs"
 	"github.com/SanyaWarvar/poker/pkg/game"
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
@@ -42,7 +43,7 @@ func (h *Handler) EnterInLobby(c *websocket.Conn) {
 		WsErrorResponse(c, websocket.CloseMessage, err.Error())
 		return
 	}
-	h.engine.Observer.Conn[userId.String()] = c
+	h.engine.WsObserver.Conn[userId.String()] = c
 	ok := h.engine.AddPlayer(lobbyID)
 	if !ok {
 		WsErrorResponse(c, websocket.CloseMessage, "cant enter")

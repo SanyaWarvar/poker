@@ -29,6 +29,7 @@ type IUserRepo interface {
 	SaveProfilePic(userId uuid.UUID, picture []byte, filename string) error
 	ChangeBalance(userId uuid.UUID, delta int) error
 	GetPlayersByIdLIst(idList []uuid.UUID) ([]User, error)
+	UpdateManyUserBalance(userId []uuid.UUID, newBalance []int) error
 }
 
 type UserPostgres struct {
@@ -208,4 +209,43 @@ func (r *UserPostgres) GetPlayersByIdLIst(idList []uuid.UUID) ([]User, error) {
 	err := r.db.Select(&output, query, pq.Array(idList))
 
 	return output, err
+}
+func (r *UserPostgres) UpdateManyUserBalance(userId []uuid.UUID, newBalance []int) error {
+	if len(userId) != len(newBalance) {
+		return fmt.Errorf("invalid arrays lenght")
+	}
+
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	stmt, err := tx.Preparex(`
+        UPDATE users 
+        SET balance = $1 
+        WHERE id = $2
+    `)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for i, userId := range userId {
+		_, err := stmt.Exec(newBalance[i], userId)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+
 }

@@ -21,10 +21,6 @@ func NewServer(h *handlers.Handler) *Server {
 	return &Server{handler: h}
 }
 
-// @securityDefinitions.handler.apikey ApiAuth
-// @in Authorization
-// @name access_token
-
 // @title Card House API
 // @version 1.0
 // @description This is a poker server

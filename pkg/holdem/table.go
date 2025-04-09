@@ -523,22 +523,36 @@ func (t *PokerTable) checkReady() bool {
 	if !t.Meta.GameStarted {
 		return false
 	}
-	counter := 0
-	fmt.Println("===============")
-	for _, v := range t.Meta.Players {
-		if v.GetFold() || v.GetBalance() == 0 {
+
+	activePlayers := 0
+	notFoldedPlayers := 0
+	actedPlayers := 0
+
+	for _, player := range t.Meta.Players {
+		if player.GetBalance() < 0 {
 			continue
 		}
-		if !v.GetReadyStatus() {
-			counter++
+
+		if player.GetBalance() > 0 {
+			activePlayers++
 		}
-		fmt.Println(counter, v.String())
-		if counter > 1 {
-			return false
+
+		if !player.GetFold() {
+			notFoldedPlayers++
+		}
+
+		if player.GetReadyStatus() {
+			actedPlayers++
 		}
 	}
-	fmt.Println(counter)
-	return true
+
+	totalPlayers := len(t.Meta.Players)
+	fmt.Println((activePlayers <= 1), (notFoldedPlayers <= 1), (actedPlayers == totalPlayers))
+	// Условия для нового раунда:
+	// 1. Все, кроме одного, имеют баланс 0
+	// 2. Все, кроме одного, сбросили карты
+	// 3. Все игроки сделали ход
+	return (activePlayers <= 1) || (notFoldedPlayers <= 1) || (actedPlayers == totalPlayers)
 }
 
 func (t *PokerTable) handleCheck(playerId string) error {

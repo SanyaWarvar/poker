@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	_ "github.com/SanyaWarvar/poker/docs"
 	"github.com/SanyaWarvar/poker/pkg/auth"
 	"github.com/SanyaWarvar/poker/pkg/user"
 	"github.com/gofiber/fiber/v2"

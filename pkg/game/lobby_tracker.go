@@ -58,6 +58,7 @@ func (lt *LobbyTracker) Update(recipients []string, data holdem.ObserverMessage)
 	msg := strings.Split(s, " ")
 	if len(msg) > 4 && strings.Join(msg[0:4], " ") == "Next move expect from" {
 		Id := msg[4]
+		log.Printf("timeout add for %s", Id)
 		lt.timeouts[Id] = struct{}{}
 		go lt.TurnTimeout(Id, data.LobbyId)
 	}
@@ -70,7 +71,7 @@ func (lt *LobbyTracker) Update(recipients []string, data holdem.ObserverMessage)
 	if (len(msg) == 5 && strings.Join(slices.Delete(msg, 1, 2), " ") == "game has been stopped") ||
 		(len(msg) == 3 && strings.Join(slices.Delete(msg, 1, 2), " ") == "game started") ||
 		(len(msg) == 3 && strings.Join(slices.Delete(msg, 1, 2), " ") == "game created") {
-		log.Printf("timeout add for %s", Id)
+
 		go lt.GameMonitor(time.Second*1, Id)
 	}
 
@@ -82,7 +83,7 @@ func (lt *LobbyTracker) TurnTimeout(playerId, lobbyId string) {
 	defer lt.mu.Unlock()
 	_, ok := lt.timeouts[playerId]
 	if ok {
-		//lt.services.DoAction(uuid.MustParse(playerId), uuid.MustParse(lobbyId), "fold", 0)
+		lt.services.DoAction(uuid.MustParse(playerId), uuid.MustParse(lobbyId), "fold", 0)
 	}
 }
 

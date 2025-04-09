@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	_ "github.com/SanyaWarvar/poker/docs"
 	"github.com/SanyaWarvar/poker/pkg/game"
 	"github.com/SanyaWarvar/poker/pkg/holdem"
 	"github.com/gofiber/fiber/v2"
@@ -112,8 +113,9 @@ func (h *Handler) CreateLobby(c *fiber.Ctx) error {
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, err.Error())
 	}
-	h.services.HoldemService.AddObserver(lobbyId, h.engine.Observer)
+	h.services.HoldemService.AddObserver(lobbyId, h.engine.WsObserver)
 	h.services.HoldemService.AddObserver(lobbyId, h.engine.Lt)
+	h.services.HoldemService.AddObserver(lobbyId, h.engine.BObserver)
 	h.engine.NewLobby(lobbyId, userId, game.LobbyInfo{
 		GameStarted:  false,
 		PlayersCount: 0,

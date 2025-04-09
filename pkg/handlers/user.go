@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	_ "github.com/SanyaWarvar/poker/docs"
 	"github.com/SanyaWarvar/poker/pkg/user"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
