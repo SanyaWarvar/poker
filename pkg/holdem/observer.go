@@ -11,6 +11,7 @@ type IObserver interface {
 type ObserverMessage struct {
 	EventType string
 	EventData interface{}
+	LobbyId   string
 }
 
 type Logger struct{}
