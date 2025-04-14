@@ -62,7 +62,6 @@ func (h *Handler) GetAllLobbies(c *fiber.Ctx) error {
 type TableConfigInput struct {
 	BlindIncreaseTime string `json:"blind_increase_time" binding:"reqired" example:"15m"`
 	MaxPlayers        int    `json:"max_players" binding:"reqired" example:"7"`
-	EnterAfterStart   bool   `json:"cache_game" binding:"reqired" example:"true"` //true = cache game. false = sit n go
 	SmallBlind        int    `json:"small_blind" binding:"reqired" example:"100"`
 	Ante              int    `json:"ante" example:"25"`
 	BankAmount        int    `json:"bank_amount"`
@@ -86,9 +85,6 @@ func (h *Handler) CreateLobby(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusBadRequest, err.Error())
 	}
 	minPlayers := 2
-	if !input.EnterAfterStart {
-		minPlayers = input.MaxPlayers
-	}
 	userIdInterface := c.Locals("userId")
 	userId, ok := userIdInterface.(uuid.UUID)
 	if !ok {
@@ -105,7 +101,7 @@ func (h *Handler) CreateLobby(c *fiber.Ctx) error {
 		input.SmallBlind,
 		input.Ante,
 		input.BankAmount,
-		input.EnterAfterStart,
+		true,
 		0,
 	)
 

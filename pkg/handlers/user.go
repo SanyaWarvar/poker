@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"database/sql"
+	"errors"
 	"io"
 	"net/http"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	_ "github.com/SanyaWarvar/poker/docs"
 	"github.com/SanyaWarvar/poker/pkg/user"
@@ -67,7 +70,15 @@ func (h *Handler) UpdateUserInfo(c *fiber.Ctx) error {
 	}
 	err = h.services.UserService.UpdateUsername(userId, input.Username)
 	if err != nil {
-		return ErrorResponse(c, http.StatusNotFound, "user not found")
+		if errors.Is(err, sql.ErrNoRows) || strings.Contains(err.Error(), "not found") {
+			return ErrorResponse(c, http.StatusNotFound, "user not found")
+		}
+
+		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "UNIQUE constraint") {
+			return ErrorResponse(c, http.StatusConflict, "username already taken")
+		}
+
+		return ErrorResponse(c, http.StatusInternalServerError, "failed to update username")
 	}
 	return c.Status(http.StatusNoContent).JSON(nil)
 }

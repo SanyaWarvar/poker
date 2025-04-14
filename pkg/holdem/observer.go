@@ -9,9 +9,9 @@ type IObserver interface {
 }
 
 type ObserverMessage struct {
-	EventType string
-	EventData interface{}
-	LobbyId   string
+	EventType string      `json:"event_type"`
+	EventData interface{} `json:"event_data"`
+	LobbyId   string      `json:"lobby_id"`
 }
 
 type Logger struct{}

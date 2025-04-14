@@ -36,7 +36,7 @@ type LobbyTracker struct {
 	timeouts map[string]struct{}
 }
 
-var LobbyTrackerEventTypes = []string{"info"}
+var LobbyTrackerEventTypes = []string{"game_started", "next_move", "do", "game created", "game started", "stop_game"}
 
 func NewLobbyTracker(s IHoldemService) *LobbyTracker {
 	return &LobbyTracker{
@@ -56,22 +56,20 @@ func (lt *LobbyTracker) Update(recipients []string, data holdem.ObserverMessage)
 		return
 	}
 	msg := strings.Split(s, " ")
-	if len(msg) > 4 && strings.Join(msg[0:4], " ") == "Next move expect from" {
+	if data.EventType == "next_move" {
 		Id := msg[4]
 		log.Printf("timeout add for %s", Id)
 		lt.timeouts[Id] = struct{}{}
 		go lt.TurnTimeout(Id, data.LobbyId)
 	}
+
 	Id := msg[1]
-	if len(msg) > 4 && strings.Join([]string{msg[0], msg[2]}, " ") == "player do" {
+	if data.EventType == "do" {
 		log.Printf("timeout delete for %s", Id)
 		delete(lt.timeouts, Id)
 	}
 
-	if (len(msg) == 5 && strings.Join(slices.Delete(msg, 1, 2), " ") == "game has been stopped") ||
-		(len(msg) == 3 && strings.Join(slices.Delete(msg, 1, 2), " ") == "game started") ||
-		(len(msg) == 3 && strings.Join(slices.Delete(msg, 1, 2), " ") == "game created") {
-
+	if data.EventType == "stop_game" || data.EventType == "game started" || data.EventType == "game created" {
 		go lt.GameMonitor(time.Second*1, Id)
 	}
 
@@ -101,7 +99,6 @@ func (lt *LobbyTracker) GameMonitor(interval time.Duration, lobbyId string) {
 	info.LastActivity = time.Now()
 	lt.lobbies[lobbyId] = info
 	lt.mu.Unlock()
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -147,11 +144,6 @@ func (lt *LobbyTracker) GameMonitor(interval time.Duration, lobbyId string) {
 			lt.mu.Unlock()
 		}
 	}
-}
-
-func (lt *LobbyTracker) StartBackgroundTasks() {
-	//go lt.cleanupEmptyLobbiesMonitor(time.Second)
-	//go lt.startGameMonitor(time.Second)
 }
 
 func (lt *LobbyTracker) AddPlayer(lId uuid.UUID) bool {

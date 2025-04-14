@@ -1,13 +1,11 @@
 package game
 
 import (
-	"slices"
-
 	"github.com/SanyaWarvar/poker/pkg/holdem"
 	"github.com/gofiber/websocket/v2"
 )
 
-var WsObserverEventTypes = []string{"info", "game", "error"}
+var WsObserverEventTypes = []string{}
 
 type WsObserver struct {
 	Conn map[string]*websocket.Conn
@@ -20,9 +18,9 @@ func NewWsObserver() *WsObserver {
 }
 
 func (o *WsObserver) Update(recipients []string, data holdem.ObserverMessage) {
-	if slices.Contains(WsObserverEventTypes, data.EventType) {
-		o.Broadcast(recipients, data)
-	}
+
+	o.Broadcast(recipients, data)
+
 }
 
 func (o *WsObserver) Broadcast(recipients []string, data holdem.ObserverMessage) {

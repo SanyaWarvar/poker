@@ -15,7 +15,7 @@ func NewBalanceObserver(s user.IUserService) *BalanceObserver {
 }
 
 func (bo *BalanceObserver) Update(recipients []string, data holdem.ObserverMessage) {
-	if data.EventType != "info" {
+	if data.EventType != "players_stats" {
 		return
 	}
 	players, ok := data.EventData.([]holdem.IPlayer)
