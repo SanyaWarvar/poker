@@ -48,6 +48,7 @@ func (h *Handler) SignUp(c *fiber.Ctx) error {
 
 	err = h.services.UserService.CreateUser(input)
 	if err != nil {
+		fmt.Println(err.Error())
 		errorMessage := ""
 		if strings.Contains(err.Error(), "email") {
 			errorMessage = "This email already exist"
