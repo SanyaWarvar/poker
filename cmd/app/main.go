@@ -162,12 +162,13 @@ func generateNotifications(repo notifications.INotificationRepository, userId uu
 	}
 	for {
 
-		n, err := repo.GetNotReadedNotifiesByUserId(userId)
+		n, err := repo.GetNotifyCount(userId)
 		if err != nil {
 			log.Warnf("notify gen: %s", n)
 			continue
 		}
-		if len(n) < 5 {
+
+		if n < 5 {
 			for ind := range messages {
 				repo.CreateNotification(notifications.Notification{
 					Id:         uuid.New(),

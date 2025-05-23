@@ -15,6 +15,7 @@ type INotificationRepository interface {
 	MarkReaded(notificationId, userId uuid.UUID) error
 	CreateNotification(item Notification) error
 	GetNotReadedNotifiesByUserId(userId uuid.UUID) ([]Notification, error)
+	GetNotifyCount(userId uuid.UUID) (int, error)
 }
 
 func NewNotificationsPostgres(db *sqlx.DB) *NotificationsPostgres {
@@ -46,4 +47,13 @@ func (r *NotificationsPostgres) MarkReaded(notificationId, userId uuid.UUID) err
 	`
 	_, err := r.db.Exec(query, notificationId, userId)
 	return err
+}
+
+func (r *NotificationsPostgres) GetNotifyCount(userId uuid.UUID) (int, error) {
+	query := `
+		SELECT count(*) FROM notifications WHERE user_id = $1 and readed = 'f';
+	`
+	var n int
+	err := r.db.Get(&n, query, userId)
+	return n, err
 }
