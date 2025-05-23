@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -173,7 +174,8 @@ func (h *Handler) NotificationsConnect(c *websocket.Conn) {
 		if err != nil {
 			WsErrorResponse(c, websocket.TextMessage, err.Error())
 		}
-
-		h.services.NotificationService.MarkReaded(id.Id, userId)
+		fmt.Println(userId, "read", id.Id)
+		err = h.services.NotificationService.MarkReaded(id.Id, userId)
+		fmt.Println(userId, "err", err.Error())
 	}
 }
