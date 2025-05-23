@@ -23,6 +23,9 @@ type IUserService interface {
 	ChangeBalance(userId uuid.UUID, delta int) error //TODO
 	GetPlayersByIdLIst(idList []uuid.UUID) ([]User, error)
 	UpdateManyUserBalance(userId []uuid.UUID, newBalance []int) error
+	IncGameCount(playerId uuid.UUID) error
+	UpdateMaxBalance(playerId uuid.UUID) error
+	GetStatsByU(username string) (PlayerStats, error)
 }
 
 type UserService struct {
@@ -55,18 +58,25 @@ func (s *UserService) GetUserByUP(user User) (User, error) {
 	}
 
 	if s.repo.ComparePassword(user.Password, targetUser.Password) {
+		stats, err := s.repo.GetStatsByU(targetUser.Username)
+		targetUser.Stats = stats
 		return targetUser, err
 	}
+
 	return user, errors.New("incorrect password")
 }
 
 func (s *UserService) GetUserByEP(email, password string) (User, error) {
 	var user User
 	targetUser, err := s.repo.GetUserByE(email)
+	fmt.Println(1, err)
 	if err != nil {
 		return user, err
 	}
 	if s.repo.ComparePassword(password, targetUser.Password) {
+		stats, err := s.repo.GetStatsByU(targetUser.Username)
+		targetUser.Stats = stats
+		fmt.Println(3, err)
 		return targetUser, err
 	}
 
@@ -88,7 +98,16 @@ func (s *UserService) UpdateProfilePic(userId uuid.UUID, picture []byte, ext str
 }
 
 func (s *UserService) GetUserById(userId uuid.UUID) (User, error) {
-	return s.repo.GetUserById(userId)
+	user, err := s.repo.GetUserById(userId)
+	if err != nil {
+		return user, err
+	}
+	stats, err := s.repo.GetStatsByU(user.Username)
+	if err != nil {
+		return user, err
+	}
+	user.Stats = stats
+	return user, nil
 }
 
 func (s *UserService) UpdateUsername(userId uuid.UUID, username string) error {
@@ -96,7 +115,16 @@ func (s *UserService) UpdateUsername(userId uuid.UUID, username string) error {
 }
 
 func (s *UserService) GetUserByUsername(username string) (User, error) {
-	return s.repo.GetUserByUsername(username)
+	user, err := s.repo.GetUserByUsername(username)
+	if err != nil {
+		return user, err
+	}
+	stats, err := s.repo.GetStatsByU(user.Username)
+	if err != nil {
+		return user, err
+	}
+	user.Stats = stats
+	return user, nil
 }
 
 func (s *UserService) GetDaily(userId uuid.UUID) (DailyReward, error) {
@@ -133,4 +161,16 @@ func (s *UserService) GetPlayersByIdLIst(idList []uuid.UUID) ([]User, error) {
 
 func (s *UserService) UpdateManyUserBalance(userId []uuid.UUID, newBalance []int) error {
 	return s.repo.UpdateManyUserBalance(userId, newBalance)
+}
+
+func (s *UserService) IncGameCount(playerId uuid.UUID) error {
+	return s.repo.IncGameCount(playerId)
+}
+
+func (s *UserService) UpdateMaxBalance(playerId uuid.UUID) error {
+	return s.repo.UpdateMaxBalance(playerId)
+}
+
+func (s *UserService) GetStatsByU(username string) (PlayerStats, error) {
+	return s.repo.GetStatsByU(username)
 }

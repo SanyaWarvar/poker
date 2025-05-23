@@ -19,8 +19,8 @@ var NameFromValue = map[int]string{
 }
 
 type Card struct {
-	Suit  string
-	Value int
+	Suit  string `json:"suit"`
+	Value int    `json:"value"`
 }
 
 func (c *Card) String() string {

@@ -12,15 +12,16 @@ import (
 // User представляет собой модель пользователя.
 // @Schema
 type User struct {
-	Id               uuid.UUID `json:"-"`
-	Username         string    `json:"username" binding:"required" db:"username"`
-	Email            string    `json:"email" binding:"required" db:"email"`
-	Password         string    `json:"-" binding:"required" db:"password_hash"`
-	ProfilePic       string    `json:"-" db:"profile_picture"`
-	ProfilePicUrl    string    `json:"profile_picture_url"`
-	Balance          int       `json:"balance" db:"balance"`
-	IsEmailConfirmed bool      `json:"-" db:"confirmed_email"`
-	PicExt           string    `json:"-" db:"pic_ext"`
+	Id               uuid.UUID   `json:"-"`
+	Username         string      `json:"username" binding:"required" db:"username"`
+	Email            string      `json:"email" binding:"required" db:"email"`
+	Password         string      `json:"-" binding:"required" db:"password_hash"`
+	ProfilePic       string      `json:"-" db:"profile_picture"`
+	ProfilePicUrl    string      `json:"profile_picture_url"`
+	Balance          int         `json:"balance" db:"balance"`
+	IsEmailConfirmed bool        `json:"-" db:"confirmed_email"`
+	PicExt           string      `json:"-" db:"pic_ext"`
+	Stats            PlayerStats `json:"stats"`
 }
 
 const (

@@ -1,10 +1,14 @@
 package handlers
 
 import (
+	"database/sql"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	_ "github.com/SanyaWarvar/poker/docs"
 	"github.com/SanyaWarvar/poker/pkg/user"
@@ -30,7 +34,8 @@ func (h *Handler) GetUser(c *fiber.Ctx) error {
 		return ErrorResponse(c, http.StatusBadRequest, "username cant be empty")
 	}
 	user, err := h.services.UserService.GetUserByUsername(username)
-	if err != nil { // TODO возможно могут быть другие проблемы?
+	if err != nil {
+		fmt.Println(err)
 		return ErrorResponse(c, http.StatusNotFound, "user not found")
 	}
 	user.GenerateUrl()
@@ -53,6 +58,7 @@ type UsernameInput struct {
 // @Failure 400 {object} map[string]string "bad json"
 // @Failure 401 {object} map[string]string "bad user id"
 // @Failure 404 {object} map[string]string "user not found"
+// @Failure 409 {object} map[string]string "username already taken"
 // @Router /user/ [put]
 func (h *Handler) UpdateUserInfo(c *fiber.Ctx) error {
 	var input UsernameInput
@@ -67,7 +73,15 @@ func (h *Handler) UpdateUserInfo(c *fiber.Ctx) error {
 	}
 	err = h.services.UserService.UpdateUsername(userId, input.Username)
 	if err != nil {
-		return ErrorResponse(c, http.StatusNotFound, "user not found")
+		if errors.Is(err, sql.ErrNoRows) || strings.Contains(err.Error(), "not found") {
+			return ErrorResponse(c, http.StatusNotFound, "user not found")
+		}
+
+		if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "UNIQUE constraint") {
+			return ErrorResponse(c, http.StatusConflict, "username already taken")
+		}
+
+		return ErrorResponse(c, http.StatusInternalServerError, "failed to update username")
 	}
 	return c.Status(http.StatusNoContent).JSON(nil)
 }

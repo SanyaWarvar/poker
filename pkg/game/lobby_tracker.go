@@ -33,7 +33,7 @@ type LobbyTracker struct {
 	timeouts map[string]struct{}
 }
 
-var LobbyTrackerEventTypes = []string{"info"}
+var LobbyTrackerEventTypes = []string{"game_started", "next_move", "do", "game created", "game started", "stop_game"}
 
 func NewLobbyTracker(s IHoldemService) *LobbyTracker {
 	return &LobbyTracker{
@@ -55,15 +55,12 @@ func (lt *LobbyTracker) Update(recipients []string, data holdem.ObserverMessage)
 	msg := strings.Split(s, " ")
 
 	Id := msg[1]
-	if len(msg) > 4 && strings.Join([]string{msg[0], msg[2]}, " ") == "player do" {
+	if data.EventType == "do" {
 		log.Printf("timeout delete for %s", Id)
 		delete(lt.timeouts, Id)
 	}
 
-	if (len(msg) == 5 && strings.Join(slices.Delete(msg, 1, 2), " ") == "game has been stopped") ||
-		(len(msg) == 3 && strings.Join(slices.Delete(msg, 1, 2), " ") == "game started") ||
-		(len(msg) == 3 && strings.Join(slices.Delete(msg, 1, 2), " ") == "game created") {
-
+	if data.EventType == "stop_game" || data.EventType == "game started" || data.EventType == "game created" {
 		go lt.GameMonitor(time.Second*1, Id)
 	}
 

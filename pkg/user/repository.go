@@ -30,6 +30,9 @@ type IUserRepo interface {
 	ChangeBalance(userId uuid.UUID, delta int) error
 	GetPlayersByIdLIst(idList []uuid.UUID) ([]User, error)
 	UpdateManyUserBalance(userId []uuid.UUID, newBalance []int) error
+	IncGameCount(playerId uuid.UUID) error
+	UpdateMaxBalance(playerId uuid.UUID) error
+	GetStatsByU(username string) (PlayerStats, error)
 }
 
 type UserPostgres struct {
@@ -42,8 +45,26 @@ func NewUserPostgres(db *sqlx.DB) *UserPostgres {
 
 func (r *UserPostgres) CreateUser(user User) error {
 	id := uuid.NewString()
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
 	query := fmt.Sprint(`INSERT INTO users (id, username, email, password_hash, profile_picture) VALUES ($1, $2, $3, $4, $5)`)
-	_, err := r.db.Exec(query, id, user.Username, user.Email, user.Password, user.ProfilePic)
+	_, err = tx.Exec(query, id, user.Username, user.Email, user.Password, user.ProfilePic)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	query = fmt.Sprint(`INSERT INTO player_stats(user_id) values($1)`)
+	_, err = tx.Exec(query, id)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 	return err
 }
 
@@ -248,4 +269,35 @@ func (r *UserPostgres) UpdateManyUserBalance(userId []uuid.UUID, newBalance []in
 
 	return nil
 
+}
+
+func (r *UserPostgres) IncGameCount(playerId uuid.UUID) error {
+	query := `
+	UPDATE player_stats
+	SET games_played = games_played + 1
+	WHERE user_id = $1
+	`
+	_, err := r.db.Exec(query, playerId)
+	return err
+}
+
+func (r *UserPostgres) UpdateMaxBalance(playerId uuid.UUID) error {
+	query := `
+	UPDATE player_stats
+	SET max_balance = max(
+	(select balance from users where user_id = $1)
+	, max_balance)
+	WHERE user_id = $1
+	`
+	_, err := r.db.Exec(query, playerId)
+	return err
+}
+
+func (r *UserPostgres) GetStatsByU(username string) (PlayerStats, error) {
+	var output PlayerStats
+	query := `
+	select * from player_stats where user_id = (select id from users where username = $1)
+	`
+	err := r.db.Get(&output, query, username)
+	return output, err
 }
