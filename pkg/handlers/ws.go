@@ -176,6 +176,9 @@ func (h *Handler) NotificationsConnect(c *websocket.Conn) {
 		}
 		fmt.Println(userId, "read", id.Id)
 		err = h.services.NotificationService.MarkReaded(id.Id, userId)
-		fmt.Println(userId, "err", err.Error())
+		if err != nil {
+			fmt.Println(userId, "err", err.Error())
+		}
+
 	}
 }
