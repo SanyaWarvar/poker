@@ -15,6 +15,7 @@ import (
 	"github.com/SanyaWarvar/poker/pkg/handlers"
 	"github.com/SanyaWarvar/poker/pkg/notifications"
 	"github.com/SanyaWarvar/poker/pkg/server"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -161,15 +162,22 @@ func generateNotifications(repo notifications.INotificationRepository, userId uu
 	}
 	for {
 
-		for ind := range messages {
-			repo.CreateNotification(notifications.Notification{
-				Id:         uuid.New(),
-				UserId:     userId,
-				Payload:    messages[ind],
-				LastSendAt: time.Now().Add(-1 * 30 * time.Second),
-				Readed:     false,
-			})
-			time.Sleep(time.Second * 5)
+		n, err := repo.GetNotReadedNotifiesByUserId(userId)
+		if err != nil {
+			log.Warnf("notify gen: %s", n)
+			continue
+		}
+		if len(n) < 5 {
+			for ind := range messages {
+				repo.CreateNotification(notifications.Notification{
+					Id:         uuid.New(),
+					UserId:     userId,
+					Payload:    messages[ind],
+					LastSendAt: time.Now().Add(-1 * 30 * time.Second),
+					Readed:     false,
+				})
+				time.Sleep(time.Second * 5)
+			}
 		}
 
 	}
