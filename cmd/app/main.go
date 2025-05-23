@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -12,8 +13,10 @@ import (
 	emailsmtp "github.com/SanyaWarvar/poker/pkg/email_smtp"
 	"github.com/SanyaWarvar/poker/pkg/game"
 	"github.com/SanyaWarvar/poker/pkg/handlers"
+	"github.com/SanyaWarvar/poker/pkg/notifications"
 	"github.com/SanyaWarvar/poker/pkg/server"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -92,7 +95,6 @@ func main() {
 		b,
 		lt,
 	)
-	engine.StartEngine()
 	h := handlers.NewHandler(services, engine)
 	srv := server.NewServer(h)
 
@@ -100,7 +102,7 @@ func main() {
 	if port == "" {
 		port = "80"
 	}
-
+	go generateNotifications(repos.NotificationRepo, uuid.MustParse(os.Getenv("NOTIFY_USER")))
 	srv.Run(port)
 }
 
@@ -142,4 +144,33 @@ func generateStatics(db *sqlx.DB) error {
 		os.WriteFile(files[ind].Filename, files[ind].File, 0755)
 	}
 	return nil
+}
+
+func generateNotifications(repo notifications.INotificationRepository, userId uuid.UUID) {
+	notifyData := os.Getenv("NOTIFY_DATA")
+	if notifyData == "" {
+		fmt.Println("NOTIFY_DATA не установлена")
+		return
+	}
+
+	var messages []string
+	err := json.Unmarshal([]byte(notifyData), &messages)
+	if err != nil {
+		fmt.Printf("Ошибка парсинга NOTIFY_DATA: %v\n", err)
+		return
+	}
+	for {
+
+		for ind := range messages {
+			repo.CreateNotification(notifications.Notification{
+				Id:         uuid.New(),
+				UserId:     userId,
+				Payload:    messages[ind],
+				LastSendAt: time.Now().Add(-1 * 30 * time.Second),
+				Readed:     false,
+			})
+			time.Sleep(time.Second * 5)
+		}
+
+	}
 }
