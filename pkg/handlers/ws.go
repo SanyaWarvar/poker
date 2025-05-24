@@ -10,6 +10,7 @@ import (
 	"github.com/SanyaWarvar/poker/pkg/game"
 	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
+	"gopkg.in/pusher/pusher-http-go.v4"
 )
 
 func (h *Handler) EnterInLobby(c *websocket.Conn) {
@@ -126,10 +127,17 @@ func (h *Handler) NotificationsConnect(c *websocket.Conn) {
 			if len(output) == 0 {
 				continue
 			}
-			err = c.WriteJSON(output)
-			if err != nil {
-				WsErrorResponse(c, websocket.CloseMessage, err.Error())
-				return
+			pusherClient := pusher.Client{
+				AppID:   "1997630",
+				Key:     "b145551c52332eb95c75",
+				Secret:  "74befd8f0ca757fedd8b",
+				Cluster: "ap1",
+				Secure:  true,
+			}
+			fmt.Println("output", output)
+			pusherErr := pusherClient.Trigger("notification", "notification", output)
+			if pusherErr != nil {
+				log.Printf("Pusher backup failed: %v", pusherErr)
 			}
 		}
 	}(userId)
