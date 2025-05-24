@@ -45,7 +45,7 @@ func (h *Handler) EnterInLobby(c *websocket.Conn) {
 		return
 	}
 	h.engine.WsObserver.Conn[userId.String()] = c
-	ok := h.engine.AddPlayer(lobbyID)
+	ok := h.engine.AddPlayer(lobbyID, userId)
 	if !ok {
 		WsErrorResponse(c, websocket.CloseMessage, "cant enter")
 		return

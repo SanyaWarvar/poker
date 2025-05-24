@@ -80,7 +80,7 @@ func (lt *LobbyTracker) GameMonitor(tts time.Duration, lobbyId string) {
 
 }
 
-func (lt *LobbyTracker) AddPlayer(lId uuid.UUID) bool {
+func (lt *LobbyTracker) AddPlayer(lId, pId uuid.UUID) bool {
 	lt.mu.Lock()
 	defer lt.mu.Unlock()
 	l, ok := lt.lobbies[lId.String()]
