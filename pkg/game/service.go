@@ -1,8 +1,6 @@
 package game
 
 import (
-	"errors"
-
 	"github.com/SanyaWarvar/poker/pkg/holdem"
 	"github.com/SanyaWarvar/poker/pkg/user"
 	"github.com/google/uuid"
@@ -105,10 +103,10 @@ func (s *HoldemService) GetLobbyByPId(playerId uuid.UUID) (LobbyOutput, error) {
 
 // TODO change this
 func (s *HoldemService) EnterInLobby(lobbyId, playerId uuid.UUID, balance int) error {
-	_, err := s.GetLobbyByPId(playerId)
+	/*_, err := s.GetLobbyByPId(playerId)
 	if err != ErrLobbyNotFound {
 		return errors.New("player already in lobby")
-	}
+	}*/
 	lobby, err := s.GetLobbyById(lobbyId)
 	if err != nil {
 		return err

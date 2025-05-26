@@ -36,7 +36,7 @@ func (e *HoldemEngine) NewLobby(lId, pId uuid.UUID, lInfo LobbyInfo) {
 
 func (e *HoldemEngine) AddPlayer(lId, pId uuid.UUID) bool {
 	go e.Lt.GameMonitor(DefaultTTS, lId.String())
-	return e.Lt.AddPlayer(lId, pId)
+	return e.Lt.AddPlayer(lId)
 
 }
 
