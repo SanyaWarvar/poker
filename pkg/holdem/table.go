@@ -206,6 +206,7 @@ func (t *PokerTable) StartGame() error {
 	t.Meta.CurrentRound = -1
 	t.Meta.refreshDeck(t.Config.Seed)
 	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game_started", fmt.Sprintf("game %s started", t.Config.TableId.String()), t.Config.TableId.String()})
+	t.SendPlayersStats()
 	t.NewRound()
 	return nil
 }
