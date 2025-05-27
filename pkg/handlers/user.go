@@ -42,6 +42,36 @@ func (h *Handler) GetUser(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(user)
 }
 
+// GetUserById
+// @Summary Получить пользователя по id
+// @Description Возвращает данные пользователя по его id.
+// @Security ApiAuth
+// @Tags user
+// @Produce json
+// @Param username path string true "Имя пользователя"
+// @Success 200 {object} user.User "Успешный ответ"
+// @Failure 400 {object} map[string]string "username cant be empty"
+// @Failure 404 {object} map[string]string "user not found"
+// @Router /user/{username} [get]
+func (h *Handler) GetUserById(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	if id == "" {
+		return ErrorResponse(c, http.StatusBadRequest, "username cant be empty")
+	}
+	idUUID, err := uuid.Parse(id)
+	if err != nil {
+		return ErrorResponse(c, http.StatusBadRequest, "bad id")
+	}
+	user, err := h.services.UserService.GetUserById(idUUID)
+	if err != nil {
+		fmt.Println(err)
+		return ErrorResponse(c, http.StatusNotFound, "user not found")
+	}
+	user.GenerateUrl()
+	return c.Status(http.StatusOK).JSON(user)
+}
+
 type UsernameInput struct {
 	Username string `json:"username" binding:"reqired" example:"john doe"`
 }

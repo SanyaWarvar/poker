@@ -484,6 +484,15 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "409": {
+                        "description": "username already taken",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -602,14 +611,14 @@ const docTemplate = `{
                         "ApiAuth": []
                     }
                 ],
-                "description": "Возвращает данные пользователя по его имени.",
+                "description": "Возвращает данные пользователя по его id.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "user"
                 ],
-                "summary": "Получить пользователя по имени",
+                "summary": "Получить пользователя по id",
                 "parameters": [
                     {
                         "type": "string",
@@ -679,6 +688,9 @@ const docTemplate = `{
                 },
                 "profile_picture_url": {
                     "type": "string"
+                },
+                "stats": {
+                    "$ref": "#/definitions/user.PlayerStats"
                 },
                 "username": {
                     "type": "string"
@@ -752,11 +764,6 @@ const docTemplate = `{
                 "blind_increase_time": {
                     "type": "string",
                     "example": "15m"
-                },
-                "cache_game": {
-                    "description": "true = cache game. false = sit n go",
-                    "type": "boolean",
-                    "example": true
                 },
                 "max_players": {
                     "type": "integer",
@@ -840,9 +847,25 @@ const docTemplate = `{
                 1000000,
                 1000000000,
                 60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
                 3600000000000
             ],
             "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
                 "minDuration",
                 "maxDuration",
                 "Nanosecond",
@@ -863,6 +886,17 @@ const docTemplate = `{
                 "sector": {
                     "type": "integer",
                     "example": 1
+                }
+            }
+        },
+        "user.PlayerStats": {
+            "type": "object",
+            "properties": {
+                "game_count": {
+                    "type": "integer"
+                },
+                "max_balance": {
+                    "type": "integer"
                 }
             }
         }

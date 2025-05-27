@@ -1,7 +1,6 @@
 package game
 
 import (
-	"log"
 	"slices"
 	"strings"
 	"sync"
@@ -55,10 +54,6 @@ func (lt *LobbyTracker) Update(recipients []string, data holdem.ObserverMessage)
 	msg := strings.Split(s, " ")
 
 	Id := msg[1]
-	if data.EventType == "do" {
-		log.Printf("timeout delete for %s", Id)
-		delete(lt.timeouts, Id)
-	}
 
 	if data.EventType == "stop_game" || data.EventType == "game started" || data.EventType == "game created" {
 		go lt.GameMonitor(time.Second*1, Id)
