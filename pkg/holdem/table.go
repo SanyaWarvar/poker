@@ -187,7 +187,7 @@ func (t *PokerTable) AddPlayer(p IPlayer) error {
 		t.Meta.PlayersOrder = append(t.Meta.PlayersOrder, p.GetId())
 	}
 	t.Config.CurrentPlayers += 1
-	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"player enter", fmt.Sprintf("player %s enter the game", p.GetId()), t.Config.TableId.String()})
+	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"player_enter", fmt.Sprintf("player %s enter the game", p.GetId()), t.Config.TableId.String()})
 	return nil
 }
 
