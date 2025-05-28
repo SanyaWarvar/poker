@@ -67,7 +67,7 @@ func (s *Server) CreateApp() *fiber.App {
 	user := app.Group("/user", s.handler.CheckAuthMiddleware)
 	{
 		user.Get(":username", s.handler.GetUser)
-		user.Get(":id", s.handler.GetUserById)
+		user.Get("/byId/:id", s.handler.GetUserById)
 		user.Put("/", s.handler.UpdateUserInfo)
 		user.Put("/profile_pic", s.handler.UpdateProfilePic)
 		user.Post("/daily", s.handler.DailyReward)

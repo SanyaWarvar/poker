@@ -136,6 +136,7 @@ definitions:
     - 1000000
     - 1000000000
     - 60000000000
+    - 3600000000000
     type: integer
     x-enum-varnames:
     - minDuration
@@ -151,6 +152,7 @@ definitions:
     - Millisecond
     - Second
     - Minute
+    - Hour
   user.DailyReward:
     properties:
       amount:

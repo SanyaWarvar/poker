@@ -63,6 +63,7 @@ func (h *Handler) GetUserById(c *fiber.Ctx) error {
 	if err != nil {
 		return ErrorResponse(c, http.StatusBadRequest, "bad id")
 	}
+
 	user, err := h.services.UserService.GetUserById(idUUID)
 	if err != nil {
 		fmt.Println(err)
