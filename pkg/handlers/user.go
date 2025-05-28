@@ -48,11 +48,11 @@ func (h *Handler) GetUser(c *fiber.Ctx) error {
 // @Security ApiAuth
 // @Tags user
 // @Produce json
-// @Param username path string true "Имя пользователя"
+// @Param id path string true "Имя пользователя"
 // @Success 200 {object} user.User "Успешный ответ"
-// @Failure 400 {object} map[string]string "username cant be empty"
+// @Failure 400 {object} map[string]string "id cant be empty"
 // @Failure 404 {object} map[string]string "user not found"
-// @Router /user/{username} [get]
+// @Router /user/byId/{id} [get]
 func (h *Handler) GetUserById(c *fiber.Ctx) error {
 	id := c.Params("id")
 

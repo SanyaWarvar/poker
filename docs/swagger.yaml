@@ -131,22 +131,10 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
     type: integer
     x-enum-varnames:
     - minDuration
     - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
     - Nanosecond
     - Microsecond
     - Millisecond
@@ -491,7 +479,7 @@ paths:
       - user
   /user/{username}:
     get:
-      description: Возвращает данные пользователя по его id.
+      description: Возвращает данные пользователя по его имени.
       parameters:
       - description: Имя пользователя
         in: path
@@ -507,6 +495,39 @@ paths:
             $ref: '#/definitions/github_com_SanyaWarvar_poker_pkg_user.User'
         "400":
           description: username cant be empty
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: user not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiAuth: []
+      summary: Получить пользователя по имени
+      tags:
+      - user
+  /user/byId/{id}:
+    get:
+      description: Возвращает данные пользователя по его id.
+      parameters:
+      - description: Имя пользователя
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный ответ
+          schema:
+            $ref: '#/definitions/github_com_SanyaWarvar_poker_pkg_user.User'
+        "400":
+          description: id cant be empty
           schema:
             additionalProperties:
               type: string

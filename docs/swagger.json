@@ -491,6 +491,58 @@
                 }
             }
         },
+        "/user/byId/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiAuth": []
+                    }
+                ],
+                "description": "Возвращает данные пользователя по его id.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Получить пользователя по id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Имя пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешный ответ",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_SanyaWarvar_poker_pkg_user.User"
+                        }
+                    },
+                    "400": {
+                        "description": "id cant be empty",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "user not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/user/daily": {
             "post": {
                 "security": [
@@ -605,14 +657,14 @@
                         "ApiAuth": []
                     }
                 ],
-                "description": "Возвращает данные пользователя по его id.",
+                "description": "Возвращает данные пользователя по его имени.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "user"
                 ],
-                "summary": "Получить пользователя по id",
+                "summary": "Получить пользователя по имени",
                 "parameters": [
                     {
                         "type": "string",
@@ -841,23 +893,11 @@
                 1000000,
                 1000000000,
                 60000000000,
-                3600000000000,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
                 3600000000000
             ],
             "x-enum-varnames": [
                 "minDuration",
                 "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
