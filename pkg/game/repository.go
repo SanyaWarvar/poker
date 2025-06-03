@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"sync"
 
 	"github.com/SanyaWarvar/poker/pkg/holdem"
 	"github.com/google/uuid"
@@ -34,20 +33,16 @@ type IHoldemRepo interface {
 type HoldemRepo struct {
 	db   map[string]holdem.IPokerTable
 	list []string
-	mu   *sync.RWMutex
 }
 
 func NewHoldemRepo() *HoldemRepo {
 	return &HoldemRepo{
 		db: make(map[string]holdem.IPokerTable),
-		mu: &sync.RWMutex{},
 	}
 }
 
 func (r *HoldemRepo) CreateLobby(cfg *holdem.TableConfig, lobbyId uuid.UUID) error {
 	fmt.Println(r.db)
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	if _, ok := r.db[lobbyId.String()]; ok {
 		return ErrDuplicateLobbyId
 	}
@@ -58,8 +53,6 @@ func (r *HoldemRepo) CreateLobby(cfg *holdem.TableConfig, lobbyId uuid.UUID) err
 }
 
 func (r *HoldemRepo) GetLobbyList(page int) []holdem.TableConfig {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 	fmt.Println(r.db, r.list)
 	start := page * 50
 	end := (page + 1) * 50
@@ -81,8 +74,6 @@ func (r *HoldemRepo) GetLobbyList(page int) []holdem.TableConfig {
 
 func (r *HoldemRepo) GetLobbyById(lobbyId uuid.UUID) (holdem.TableConfig, error) {
 	var output holdem.TableConfig
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 	table, ok := r.db[lobbyId.String()]
 	if !ok {
 		return output, ErrLobbyNotFound
@@ -93,8 +84,6 @@ func (r *HoldemRepo) GetLobbyById(lobbyId uuid.UUID) (holdem.TableConfig, error)
 
 func (r *HoldemRepo) GetLobbyByPId(playerId uuid.UUID) (holdem.TableConfig, error) {
 	var output holdem.TableConfig
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 	fmt.Println(r.db, r.list)
 	for _, v := range r.db {
 		fmt.Println(123123123123, v)
@@ -106,8 +95,6 @@ func (r *HoldemRepo) GetLobbyByPId(playerId uuid.UUID) (holdem.TableConfig, erro
 }
 
 func (r *HoldemRepo) EnterInLobby(lobbyId uuid.UUID, player holdem.IPlayer) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	lobby, ok := r.db[lobbyId.String()]
 	if !ok {
 		return ErrLobbyNotFound
@@ -117,8 +104,6 @@ func (r *HoldemRepo) EnterInLobby(lobbyId uuid.UUID, player holdem.IPlayer) erro
 }
 
 func (r *HoldemRepo) OutFromLobby(lobbyId, playerId uuid.UUID) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	lobby, ok := r.db[lobbyId.String()]
 	if !ok {
 		return ErrLobbyNotFound
@@ -128,8 +113,6 @@ func (r *HoldemRepo) OutFromLobby(lobbyId, playerId uuid.UUID) error {
 }
 
 func (r *HoldemRepo) DoAction(playerId, lobbyId uuid.UUID, action string, amount int) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	lobby, ok := r.db[lobbyId.String()]
 	if !ok {
 		return ErrLobbyNotFound
@@ -139,16 +122,12 @@ func (r *HoldemRepo) DoAction(playerId, lobbyId uuid.UUID, action string, amount
 }
 
 func (r *HoldemRepo) DeleteLobby(lobbyId uuid.UUID) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	delete(r.db, lobbyId.String())
 	ind := slices.Index(r.list, lobbyId.String())
 	r.list = append(r.list[:ind], r.list[ind+1:]...)
 }
 
 func (r *HoldemRepo) AddObserver(lobbyId uuid.UUID, observer holdem.IObserver) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	l, ok := r.db[lobbyId.String()]
 	if !ok {
 		return ErrLobbyNotFound
@@ -158,8 +137,6 @@ func (r *HoldemRepo) AddObserver(lobbyId uuid.UUID, observer holdem.IObserver) e
 }
 
 func (r *HoldemRepo) StartGame(lobbyId uuid.UUID) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	l, ok := r.db[lobbyId.String()]
 	if !ok {
 		return ErrLobbyNotFound
@@ -169,8 +146,6 @@ func (r *HoldemRepo) StartGame(lobbyId uuid.UUID) error {
 
 func (r *HoldemRepo) PlayersIdFromLobbyById(lobbyId uuid.UUID) ([]uuid.UUID, error) {
 	var output []uuid.UUID
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	l, ok := r.db[lobbyId.String()]
 	if !ok {
 		return output, ErrLobbyNotFound

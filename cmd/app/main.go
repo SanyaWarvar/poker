@@ -89,7 +89,7 @@ func main() {
 	services := handlers.NewService(repos)
 	lt := game.NewLobbyTracker(services.HoldemService)
 	o := game.NewWsObserver()
-	b := game.NewBalanceObserver(services.UserService)
+	b := game.NewBalanceObserver(services.UserService, services.HoldemService)
 	engine := game.NewHoldemEngine(
 		services.HoldemService,
 		o,
@@ -103,7 +103,7 @@ func main() {
 	if port == "" {
 		port = "80"
 	}
-	go generateNotifications(repos.NotificationRepo, uuid.MustParse(os.Getenv("NOTIFY_USER")))
+
 	srv.Run(port)
 }
 

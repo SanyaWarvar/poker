@@ -8,11 +8,11 @@ import (
 
 type BalanceObserver struct {
 	s user.IUserService
-	h HoldemService
+	h IHoldemService
 }
 
-func NewBalanceObserver(s user.IUserService) *BalanceObserver {
-	return &BalanceObserver{s: s}
+func NewBalanceObserver(s user.IUserService, hs IHoldemService) *BalanceObserver {
+	return &BalanceObserver{s: s, h: hs}
 }
 
 func (bo *BalanceObserver) Update(recipients []string, data holdem.ObserverMessage) {

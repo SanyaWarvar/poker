@@ -1,8 +1,8 @@
 package game
 
 import (
+	"fmt"
 	"slices"
-	"strings"
 	"sync"
 	"time"
 
@@ -47,30 +47,33 @@ func (lt *LobbyTracker) Update(recipients []string, data holdem.ObserverMessage)
 	if !slices.Contains(LobbyTrackerEventTypes, data.EventType) {
 		return
 	}
-	s, ok := data.EventData.(string)
-	if !ok {
-		return
-	}
-	msg := strings.Split(s, " ")
 
-	Id := msg[1]
-
-	if data.EventType == "stop_game" || data.EventType == "game started" || data.EventType == "game created" {
-		go lt.GameMonitor(time.Second*1, Id)
+	Id := data.LobbyId
+	fmt.Println("lt", data.EventType, data.EventType == "stop_game")
+	if data.EventType == "stop_game" {
+		item := lt.lobbies[Id]
+		item.GameStarted = false
+		lt.lobbies[Id] = item
+		go lt.GameMonitor(time.Second*5, Id)
 	}
 
 }
 
 func (lt *LobbyTracker) GameMonitor(tts time.Duration, lobbyId string) {
+	fmt.Println("monitor start")
 	time.Sleep(tts)
-	lt.mu.Lock()
-	defer lt.mu.Unlock()
 	lobby, err := lt.services.GetLobbyById(uuid.MustParse(lobbyId))
+	fmt.Println("monitor", lobby, err)
 	if err != nil {
 		return
 	}
+	fmt.Println("monitor", lt.lobbies[lobbyId].GameStarted, len(lobby.Players))
 	if !lt.lobbies[lobbyId].GameStarted && len(lobby.Players) >= 2 {
+
 		lt.services.StartGame(uuid.MustParse(lobbyId))
+		item := lt.lobbies[lobbyId]
+		item.GameStarted = true
+		lt.lobbies[lobbyId] = item
 	}
 
 }
