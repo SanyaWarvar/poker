@@ -30,7 +30,7 @@ func (bo *BalanceObserver) Update(recipients []string, data holdem.ObserverMessa
 		bo.s.UpdateManyUserBalance(ids, balance)
 	}
 
-	if data.EventType == "stop_game" {
+	/*if data.EventType == "stop_game" {
 		l, err := bo.h.GetLobbyById(uuid.MustParse(data.LobbyId))
 		if err != nil {
 			return
@@ -39,5 +39,5 @@ func (bo *BalanceObserver) Update(recipients []string, data holdem.ObserverMessa
 			bo.s.IncGameCount(u.Id)
 			bo.s.UpdateMaxBalance(u.Id)
 		}
-	}
+	}*/
 }

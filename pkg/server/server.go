@@ -81,7 +81,6 @@ func (s *Server) CreateApp() *fiber.App {
 	}
 	{
 		app.Get("ws/enter", websocket.New(s.handler.EnterInLobby))
-		app.Get("ws/notifications", websocket.New(s.handler.NotificationsConnect))
 	}
 
 	return app

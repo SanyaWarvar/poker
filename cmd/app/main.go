@@ -103,7 +103,7 @@ func main() {
 	if port == "" {
 		port = "80"
 	}
-
+	go engine.Lt.GameMonitor(game.DefaultTTS)
 	srv.Run(port)
 }
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sync"
 
 	"github.com/SanyaWarvar/poker/pkg/holdem"
 	"github.com/google/uuid"
@@ -33,11 +34,13 @@ type IHoldemRepo interface {
 type HoldemRepo struct {
 	db   map[string]holdem.IPokerTable
 	list []string
+	mu   sync.Mutex
 }
 
 func NewHoldemRepo() *HoldemRepo {
 	return &HoldemRepo{
 		db: make(map[string]holdem.IPokerTable),
+		mu: sync.Mutex{},
 	}
 }
 
@@ -137,6 +140,10 @@ func (r *HoldemRepo) AddObserver(lobbyId uuid.UUID, observer holdem.IObserver) e
 }
 
 func (r *HoldemRepo) StartGame(lobbyId uuid.UUID) error {
+	fmt.Println("1 (r *HoldemRepo) StartGame(lobbyId uuid.UUID)")
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	fmt.Println("2 (r *HoldemRepo) StartGame(lobbyId uuid.UUID)")
 	l, ok := r.db[lobbyId.String()]
 	if !ok {
 		return ErrLobbyNotFound
