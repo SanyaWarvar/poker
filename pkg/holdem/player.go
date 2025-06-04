@@ -33,11 +33,12 @@ type IPlayer interface {
 	SetHand(h Hand)
 	GetLastBet() int
 	SetLastBet(bet int)
+	ToJson(withCards bool) map[string]any
 	fmt.Stringer
 }
 
 type Hand struct {
-	Cards [2]Card
+	Cards [2]Card `json:"cards,omitempty"`
 }
 
 type Player struct {
@@ -47,6 +48,18 @@ type Player struct {
 	LastBet int       `json:"-"`
 	Hand    Hand      `json:"-"`
 	IsFold  bool      `json:"-"`
+}
+
+func (p *Player) ToJson(withCards bool) map[string]any {
+	item := map[string]any{
+		"id":      p.Id,
+		"balance": p.Balance,
+	}
+	if withCards {
+		item["hand"] = p.Hand
+	}
+	fmt.Println(item)
+	return item
 }
 
 func (p *Player) String() string {

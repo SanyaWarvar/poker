@@ -81,8 +81,6 @@ func (r *HoldemRepo) GetLobbyList(page int) []holdem.TableConfig {
 
 func (r *HoldemRepo) GetLobbyById(lobbyId uuid.UUID) (holdem.TableConfig, error) {
 	var output holdem.TableConfig
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 	table, ok := r.db[lobbyId.String()]
 	if !ok {
 		return output, ErrLobbyNotFound
@@ -158,8 +156,10 @@ func (r *HoldemRepo) AddObserver(lobbyId uuid.UUID, observer holdem.IObserver) e
 }
 
 func (r *HoldemRepo) StartGame(lobbyId uuid.UUID) error {
+	fmt.Println("1 (r *HoldemRepo) StartGame(lobbyId uuid.UUID)")
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	fmt.Println("2 (r *HoldemRepo) StartGame(lobbyId uuid.UUID)")
 	l, ok := r.db[lobbyId.String()]
 	if !ok {
 		return ErrLobbyNotFound

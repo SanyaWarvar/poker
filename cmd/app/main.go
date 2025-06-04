@@ -103,7 +103,7 @@ func main() {
 	if port == "" {
 		port = "80"
 	}
-	go generateNotifications(repos.NotificationRepo, uuid.MustParse(os.Getenv("NOTIFY_USER")))
+	go engine.Lt.GameMonitor(game.DefaultTTS)
 	srv.Run(port)
 }
 

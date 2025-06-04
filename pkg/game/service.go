@@ -1,6 +1,9 @@
 package game
 
 import (
+	"fmt"
+	"sync"
+
 	"github.com/SanyaWarvar/poker/pkg/holdem"
 	"github.com/SanyaWarvar/poker/pkg/user"
 	"github.com/google/uuid"
@@ -22,12 +25,14 @@ type IHoldemService interface {
 type HoldemService struct {
 	holdemRepo IHoldemRepo
 	userRepo   user.IUserRepo
+	mu         sync.Mutex
 }
 
 func NewHoldemService(holdemRepo IHoldemRepo, userRepo user.IUserRepo) *HoldemService {
 	return &HoldemService{
 		holdemRepo: holdemRepo,
 		userRepo:   userRepo,
+		mu:         sync.Mutex{},
 	}
 }
 
@@ -67,7 +72,12 @@ func (s *HoldemService) GetLobbyList(page int) ([]LobbyOutput, error) {
 }
 
 func (s *HoldemService) GetLobbyById(lobbyId uuid.UUID) (LobbyOutput, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	var output LobbyOutput
+	if s.holdemRepo == nil {
+		fmt.Println(123)
+	}
 	info, err := s.holdemRepo.GetLobbyById(lobbyId)
 	if err != nil {
 		return output, err

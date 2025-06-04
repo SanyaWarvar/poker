@@ -199,6 +199,7 @@ func (t *PokerTable) enterPlayersFromQuery() {
 }
 
 func (t *PokerTable) StartGame() error {
+	fmt.Println("start game poker level")
 	if t.Meta.GameStarted {
 		return ErrGameStarted
 	}
@@ -206,7 +207,7 @@ func (t *PokerTable) StartGame() error {
 	t.Meta.CurrentRound = -1
 	t.Meta.refreshDeck(t.Config.Seed)
 	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{"game_started", fmt.Sprintf("game %s started", t.Config.TableId.String()), t.Config.TableId.String()})
-	t.SendPlayersStats()
+	t.SendPlayersStats(false)
 	t.NewRound()
 	return nil
 }
@@ -215,10 +216,11 @@ func (t *PokerTable) GetPlayerList() []string {
 	return t.Meta.PlayersOrder
 }
 
-func (t *PokerTable) SendPlayersStats() {
-	output := make([]IPlayer, 0, len(t.Meta.Players))
+func (t *PokerTable) SendPlayersStats(withCards bool) {
+	fmt.Println(t.Meta.CurrentRound)
+	output := make([]map[string]any, 0, len(t.Meta.Players))
 	for _, v := range t.Meta.Players {
-		output = append(output, v)
+		output = append(output, v.ToJson(withCards))
 	}
 	t.NotifyObservers(t.Meta.PlayersOrder, ObserverMessage{
 		"players_stats",
@@ -231,6 +233,7 @@ func (t *PokerTable) NewRound() error {
 	if !t.Meta.GameStarted {
 		return ErrGameNotStarted
 	}
+	t.resetPlayersStatus()
 	t.createPots()
 	t.Meta.CurrentRound += 1
 	t.Meta.CurrentBet = 0
@@ -273,7 +276,7 @@ func (t *PokerTable) NewRound() error {
 	}
 	t.choiceFirstMovePlayer()
 	t.notifyNext()
-	t.SendPlayersStats()
+	t.SendPlayersStats(t.Meta.CurrentRound == -1)
 	if t.checkReady() {
 		t.NewRound()
 	}
@@ -346,7 +349,7 @@ func (t *PokerTable) PayMoney() {
 			counter--
 		}
 	}
-	t.SendPlayersStats()
+	t.SendPlayersStats(false)
 }
 
 func (t *PokerTable) createPots() error {
@@ -546,14 +549,23 @@ func (t *PokerTable) checkReady() bool {
 			actedPlayers++
 		}
 	}
+	fmt.Println(actedPlayers, activePlayers, notFoldedPlayers, len(t.Meta.Players))
+	// Все сделали ходы
+	if actedPlayers == len(t.Meta.Players) {
+		return true
+	}
 
-	totalPlayers := len(t.Meta.Players)
-	fmt.Println((activePlayers <= 1), (notFoldedPlayers <= 1), (actedPlayers == totalPlayers))
-	// Условия для нового раунда:
-	// 1. Все, кроме одного, имеют баланс 0
-	// 2. Все, кроме одного, сбросили карты
-	// 3. Все игроки сделали ход
-	return (activePlayers <= 1) || (notFoldedPlayers <= 1) || (actedPlayers == totalPlayers)
+	// Остался один активный игрок
+	if activePlayers <= 1 {
+		return true
+	}
+
+	// Остался один не сбросивший карты
+	if notFoldedPlayers <= 1 {
+		return true
+	}
+
+	return false
 }
 
 func (t *PokerTable) handleCheck(playerId string) error {

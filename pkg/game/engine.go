@@ -1,8 +1,6 @@
 package game
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 )
 
@@ -31,15 +29,19 @@ func NewHoldemEngine(s IHoldemService, o *WsObserver, b *BalanceObserver, lt *Lo
 
 func (e *HoldemEngine) NewLobby(lId, pId uuid.UUID, lInfo LobbyInfo) {
 	e.Lt.lobbies[lId.String()] = lInfo
-	go e.Lt.GameMonitor(time.Second*5, lId.String())
 }
 
 func (e *HoldemEngine) AddPlayer(lId, pId uuid.UUID) bool {
-	go e.Lt.GameMonitor(DefaultTTS, lId.String())
 	return e.Lt.AddPlayer(lId)
-
 }
 
 func (e *HoldemEngine) HandleMove(move PlayerMove) {
 	e.service.DoAction(move.PlayerId, move.LobbyId, move.Action, move.Amount)
+}
+
+func (e *HoldemEngine) OutFromLobby(lobbyId, playerId uuid.UUID) error {
+	if e.Lt.lobbies[lobbyId.String()].PlayersCount <= 1 {
+		delete(e.Lt.lobbies, lobbyId.String())
+	}
+	return e.service.OutFromLobby(lobbyId, playerId)
 }

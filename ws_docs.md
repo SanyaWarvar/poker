@@ -2,7 +2,7 @@
 |----|--------|----|
 player_enter | player {{uuid}} enter the game | Вход в лобби нового игрока
 game_started | game {{uuid}} started | Начало игры
-players_stats | [ {id: uuid, balance: int} ] | В начале каждого раунда и после выплат в конце игры
+players_stats | [ { id: uuid, balance: int, hand: cards: [ {suit: string, value: int} ] } ] | В начале каждого раунда и после выплат в конце игры
 new_round | new round started. Current round: {{int}} | В начале каждого раунда
 get_cards | player {{uuid}} get cards: [ {{card}} ] | В начале пре-флоппа
 community_cards | community cards: [ {{card}} ] | В начале флопа, терна, ривера
@@ -26,3 +26,5 @@ do | player {{uuid}} do raise with {{int}} amount | Приходит, когда
 do | player {{uuid}} do check | Приходит, когда какой то игрок сделал соответствующий ход
 do | player {{uuid}} do fold | Приходит, когда какой то игрок сделал соответствующий ход
 ***
+
+*поле hand в евенте players_stats приходит только в конце игры, во всех (кроме последнего) раундах оно будет пустым*
