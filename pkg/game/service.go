@@ -1,6 +1,7 @@
 package game
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -75,18 +76,22 @@ func (s *HoldemService) GetLobbyById(lobbyId uuid.UUID) (LobbyOutput, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var output LobbyOutput
-	if s.holdemRepo == nil {
-		fmt.Println(123)
+	if s.holdemRepo == nil || s.userRepo == nil {
+		fmt.Println("nil repo", s.holdemRepo, s.userRepo)
+		return output, errors.New("nil repo")
 	}
 	info, err := s.holdemRepo.GetLobbyById(lobbyId)
+	fmt.Println("s.holdemRepo.GetLobbyById", info, err)
 	if err != nil {
 		return output, err
 	}
 	pId, err := s.holdemRepo.PlayersIdFromLobbyById(lobbyId)
+	fmt.Println("s.holdemRepo.PlayersIdFromLobbyById", pId, err)
 	if err != nil {
 		return output, err
 	}
 	players, err := s.userRepo.GetPlayersByIdLIst(pId)
+	fmt.Println("s.userRepo.GetPlayersByIdLIst", players, err)
 	if err != nil {
 		return output, err
 	}

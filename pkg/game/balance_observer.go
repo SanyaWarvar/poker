@@ -3,16 +3,16 @@ package game
 import (
 	"github.com/SanyaWarvar/poker/pkg/holdem"
 	"github.com/SanyaWarvar/poker/pkg/user"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/google/uuid"
 )
 
 type BalanceObserver struct {
 	s user.IUserService
-	h IHoldemService
 }
 
-func NewBalanceObserver(s user.IUserService, hs IHoldemService) *BalanceObserver {
-	return &BalanceObserver{s: s, h: hs}
+func NewBalanceObserver(s user.IUserService) *BalanceObserver {
+	return &BalanceObserver{s: s}
 }
 
 func (bo *BalanceObserver) Update(recipients []string, data holdem.ObserverMessage) {
@@ -27,17 +27,9 @@ func (bo *BalanceObserver) Update(recipients []string, data holdem.ObserverMessa
 			ids = append(ids, uuid.MustParse(p.GetId()))
 			balance = append(balance, p.GetBalance())
 		}
-		bo.s.UpdateManyUserBalance(ids, balance)
-	}
-
-	/*if data.EventType == "stop_game" {
-		l, err := bo.h.GetLobbyById(uuid.MustParse(data.LobbyId))
+		err := bo.s.UpdateManyUserBalance(ids, balance)
 		if err != nil {
-			return
+			log.Warnf("bo.s.UpdateManyUserBalance: %s", err.Error())
 		}
-		for _, u := range l.Players {
-			bo.s.IncGameCount(u.Id)
-			bo.s.UpdateMaxBalance(u.Id)
-		}
-	}*/
+	}
 }
