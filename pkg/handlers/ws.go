@@ -30,7 +30,7 @@ func (h *Handler) EnterInLobby(c *websocket.Conn) {
 		WsErrorResponse(c, websocket.CloseMessage, "no or invalid lobby id")
 		return
 	}
-	lInfo, err := h.services.HoldemService.GetLobbyById(lobbyID)
+	_, err = h.services.HoldemService.GetLobbyById(lobbyID)
 	if err != nil {
 		WsErrorResponse(c, websocket.CloseMessage, err.Error())
 		return
@@ -51,7 +51,11 @@ func (h *Handler) EnterInLobby(c *websocket.Conn) {
 		WsErrorResponse(c, websocket.CloseMessage, "cant enter")
 		return
 	}
-	
+	lInfo, err := h.services.HoldemService.GetLobbyById(lobbyID)
+	if err != nil {
+		WsErrorResponse(c, websocket.CloseMessage, err.Error())
+		return
+	}
 	for ind, v := range lInfo.Players {
 		v.GenerateUrl()
 		lInfo.Players[ind] = v
