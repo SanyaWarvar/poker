@@ -52,6 +52,7 @@ func (h *Handler) EnterInLobby(c *websocket.Conn) {
 		return
 	}
 	lInfo, err := h.services.HoldemService.GetLobbyById(lobbyID)
+	fmt.Println("linfo", lInfo, len(lInfo.Players))
 	if err != nil {
 		WsErrorResponse(c, websocket.CloseMessage, err.Error())
 		return
